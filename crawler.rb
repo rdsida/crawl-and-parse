@@ -15,7 +15,7 @@ require 'pdf-reader'
 
 # missing counties: ca
 # missing tested:   de, oh
-# missing deaths:   ky
+# missing deaths:   ky, wy
 
 SEC = 60 # seconds to wait for page to load
 OFFSET = nil # if set, start running at that state
