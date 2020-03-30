@@ -73,7 +73,7 @@ class Crawler
     @s += "\nBREAK\n" + s
     puts 'AK: tested data in image?'
     `curl http://dhss.alaska.gov/dph/Epi/id/PublishingImages/COVID-19/COVID-1_AKtesting_cumulative.png > #{@path}#{@st}/#{@filetime}_1.png`
-    h[:tested] = 1806+1528 # from image! save image?
+    h[:tested] = 2001+1653 # from image! save image?
     if @auto_flag
       @warnings << 'tested was not manually entered'
     else
@@ -298,7 +298,7 @@ class Crawler
     if @s =~ /([^'"]+CTDPHCOVID19summary[^'"]+)/
       url = 'https://portal.ct.gov' + $1
       `curl #{url} -o #{@path}#{@st}/#{@filetime}_1.pdf`
-      `open #{@path}#{@st}/#{@filetime}_1.pdf`
+      `open #{@path}#{@st}/#{@filetime}_1.pdf` unless @auto_flag
       reader = PDF::Reader.new("#{@path}#{@st}/#{@filetime}_1.pdf")
       result = reader.page(1).text.gsub(/\s+/,' ').gsub(',','')
       if result =~ /a total of ([\d]+) laboratory-confirmed cases of COVID-19 have been reported/
@@ -829,7 +829,7 @@ class Crawler
     if @driver.page_source =~ /([^'"]+covid-19-cases-in-massachusetts-as[^'"]+)/
       url = 'https://www.mass.gov' + $1
       `curl #{url} -o #{@path}#{@st}/#{@filetime}_1.pdf`
-      `open #{@path}#{@st}/#{@filetime}_1.pdf`
+      `open #{@path}#{@st}/#{@filetime}_1.pdf` unless @auto_flag
       reader = PDF::Reader.new("#{@path}#{@st}/#{@filetime}_1.pdf")
       result = reader.page(1).text.gsub(/\s+/,' ').gsub(',','')
       if result =~ /Deaths Attributed to COVID-19 ([\d]+)/
@@ -1190,12 +1190,12 @@ class Crawler
       return h
     end
     puts "image file for ND"
-    h[:tested] = 3724
-    h[:positive] = 98
-    h[:negative] = 3626
-    h[:hospitalized] = 18
+    h[:tested] = 3837
+    h[:positive] = 109
+    h[:negative] = 3728
+    h[:hospitalized] = 19
     h[:pending] = 0
-    h[:deaths] = 1 # TODO manual
+    h[:deaths] = 2 # TODO manual
     pngs = @s.scan(/files\/documents\/Files\/MSS\/coronavirus[^'"]+/)
     i = 0
     for png in pngs
@@ -1482,7 +1482,7 @@ class Crawler
     unless @auto_flag
       url = 'https://www1.nyc.gov/assets/doh/downloads/pdf/imm/covid-19-daily-data-summary.pdf'
       `curl #{url} -o #{@path}#{@st}/#{@filetime}_1.pdf`
-      `open #{@path}#{@st}/#{@filetime}_1.pdf`
+      `open #{@path}#{@st}/#{@filetime}_1.pdf` 
       reader = PDF::Reader.new("#{@path}#{@st}/#{@filetime}_1.pdf")
       result = reader.page(1).text.gsub(/\s+/,' ').gsub(',','')
       if result =~ /Deaths ([\d]+)/
