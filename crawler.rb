@@ -14,8 +14,8 @@ require 'pdf-reader'
 # counties available: de, ia
 
 # missing counties: ca
-# missing tested:   de, md, mo, oh
-# missing deaths:   de, ky, me, ri
+# missing tested:   de, oh
+# missing deaths:   ky, ri
 
 SEC = 60 # seconds to wait for page to load
 OFFSET = nil # if set, start running at that state
@@ -870,16 +870,20 @@ class Crawler
       sec -= 1
     end
     if sec > 0
-      h[:positive] = $1.to_i
+      h[:positive] = string_to_i($1)
     else
       @errors << "missing cases"
     end
     if (@driver.find_elements(class: 'container').map {|i| i.text}.select {|i| i=~/\nNumber of Deaths:([^\n]+)\n/}[0] =~ /\nNumber of Deaths:([^\n]+)\n/)
-      h[:deaths] = $1.to_i
+      h[:deaths] = string_to_i($1)
     else
       @errors << "missing deaths"
     end
-    # TODO tested
+    if (@driver.find_elements(class: 'container').map {|i| i.text}.select {|i| i=~/\nNumber of negative test results:([^\n]+)\n/}[0] =~ /\nNumber of negative test results:([^\n]+)\n/)
+      h[:negative] = string_to_i($1)
+    else
+      @errors << "missing negative"
+    end
     # TODO raw not fully saved
     h
   end
@@ -888,20 +892,25 @@ class Crawler
     crawl_page
     #byebug
     cols = @doc.css('table').map {|i| i.text}.select {|i| i=~/Confirmed Cases/}.first.split("\n").map {|i| i.strip}.select {|i| i.size > 0}
-    if cols.size == 8
+    if cols.size == 10
+    if x = cols.map.with_index {|v,i| [v,i]}.select {|v,i| v=~/^Deaths/}.first
+      h[:deaths] = string_to_i(cols[x[1]+4])
+    else
+      @errors << 'missing deaths'
+    end
     if x = cols.map.with_index {|v,i| [v,i]}.select {|v,i| v=~/^Confirmed Cases/}.first
-      h[:positive] = string_to_i(cols[x[1]+3])
+      h[:positive] = string_to_i(cols[x[1]+4])
     else
       @errors << 'missing positive'
     end
     if x = cols.map.with_index {|v,i| [v,i]}.select {|v,i| v=~/^Presumptive Positive Cases/}.first
       h[:positive] = 0 unless h[:positive]
-      h[:positive] += string_to_i(cols[x[1]+3])
+      h[:positive] += string_to_i(cols[x[1]+4])
     else
       @warnings << 'missing positive 2'
     end
     if x = cols.map.with_index {|v,i| [v,i]}.select {|v,i| v=~/^Negative Tests/}.first
-      h[:negative] = string_to_i(cols[x[1]+3])
+      h[:negative] = string_to_i(cols[x[1]+4])
     else
       @errors << 'missing negative'
     end
@@ -916,6 +925,8 @@ class Crawler
     else
       @errors << 'missing negative'
     end
+    else
+      @errors << 'table failed'
     end
     if x = cols.select {|i| i=~/^Updated: (.*)/}.first
       x=~/^Updated: (.*)/
@@ -925,8 +936,6 @@ class Crawler
     end
     # counties
     # demographics
-    # TODO no death data
-    h[:deaths] = 1 # NR
     h
   end
 
@@ -1037,7 +1046,12 @@ class Crawler
     else
       @errors << 'missing deaths'
     end
-    # TODO tested not available
+    if @s =~ /Patients tested in Missouri[^\d]+([0-9]+)/
+      h[:tested] = string_to_i($1)
+    else
+      @errors << 'missing tested'
+    end
+
     h
   end
 
@@ -2136,7 +2150,6 @@ crawl_page
     sec = SEC/3
     loop do
       flag = true
-#byebug
       @s = @driver.find_element(class: 'landingController').text.gsub(',','') rescue ''
       if @s =~ /\n(\d+)\nTotal Cases/
         h[:positive] = $1.to_i
