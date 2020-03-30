@@ -15,7 +15,7 @@ require 'pdf-reader'
 
 # missing counties: ca
 # missing tested:   de, oh
-# missing deaths:   ky, ri
+# missing deaths:   ky
 
 SEC = 60 # seconds to wait for page to load
 OFFSET = nil # if set, start running at that state
@@ -1729,10 +1729,10 @@ class Crawler
     else
       @warnings << 'missing pending'
     end
-    if (x = cols.select {|v,i| v=~/^Number of Rhode Islanders to die from COVID/}.first)
+    if (x = cols.select {|v,i| v=~/^Number of Rhode Island.*fatalities/}.first)
       h[:deaths] = string_to_i(x.strip.split.last)
     else
-      @errors << 'missing neg'
+      @errors << 'missing deaths'
     end
     h
   end
