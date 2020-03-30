@@ -1928,33 +1928,38 @@ crawl_page
   def parse_wa(h)
     crawl_page
     sec = SEC
-    cols = []
+    url = nil
+    loop do
+      url = @driver.page_source.scan(/https:\/\/[^'"]*powerbi\.com[^'"]+/)[0]
+      break if url
+      sec -= 1
+      if sec == 0
+        @errors << 'url missing'
+        return h
+      end
+      puts 'sleeping'
+      sleep 1
+    end
+    crawl_page url
+    sec = SEC
     loop do
       begin
-        cols = @driver.find_elements(class: 'contentmain')[0].text.split("\n").map {|i| i.strip}.select {|i| i.size > 0}
+        cols = @driver.find_elements(class: 'value').map {|i| i.text.gsub(',','').strip }.select {|i| (i=~/^\d+$/) && i.to_i>0 }.map {|i| i.to_i}.sort
+        if cols.size == 3
+          h[:deaths], h[:positive], h[:tested] = cols
+          break
+        end
       rescue
-        sec -= 1
-        puts 'sleeping'
-        sleep 1
       end
+      sec -= 1
       if sec == 0
         @errors << 'cols fail'
         break
       end
-      break if cols.size > 0
+      puts 'sleeping'
+      sleep 1
     end
-    x = cols.select {|i| i=~/^Negative\s+([^\s+]+)/}
-    if x.size == 1 && x[0] =~ /^Negative\s+([^\s+]+)/
-      h[:negative] = string_to_i($1)
-    else
-      @errors << 'negative'
-    end
-    if (x=cols.select {|i| i=~/^Total / && i.split.size==3}).size > 0 && (x=x[0].split) && x[0]=='Total'
-      h[:positive] = string_to_i(x[1])
-      h[:deaths] = string_to_i(x[2])
-    else
-      @errors << 'missing deaths'
-    end
+=begin
     if (i=cols.find_index("County Positive/Confirmed Cases Deaths"))
       i += 1
       h[:counties] = []
@@ -1973,6 +1978,7 @@ crawl_page
     if h[:counties].size < 34
       @errors << 'missing counties'
     end 
+=end
     h
   end
 
@@ -2082,6 +2088,7 @@ crawl_page
     sec = SEC/3
     loop do
       flag = true
+#byebug
       @s = @driver.find_element(class: 'landingController').text.gsub(',','') rescue ''
       if @s =~ /\n(\d+)\nTotal Cases/
         h[:positive] = $1.to_i
