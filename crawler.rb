@@ -292,6 +292,7 @@ class Crawler
     h
   end
 
+  # TODO death number is words
   def parse_ct(h)
     crawl_page
     if @s =~ /([^'"]+CTDPHCOVID19summary[^'"]+)/
@@ -396,10 +397,7 @@ class Crawler
       @s = @driver.find_elements(class: 'dashboard-page')[0].text.gsub(',','')
       if @s =~ /Total Cases\n(\d+)/
         h[:positive] = string_to_i($1)
-        @driver.find_elements(class: 'tab-title').select {|i| i.text =~ /Total Deaths/}[0].click
-        s = @driver.find_elements(class: 'dashboard-page')[0].text
-        @s += "\nBREAK\n" + s
-        if s =~ /Total Deaths\n(\d+)\n/
+        if @s =~ /Total Deaths\n(\d+)\n/
           h[:deaths] = string_to_i($1)
           break
         else
@@ -557,7 +555,9 @@ class Crawler
     @driver.navigate.to 'https://health.hawaii.gov/news/covid-19-updates/'
     url = @driver.page_source.scan(/https:\/\/[^'"]+daily-news-digest-[^'"]+/)[0]
     @driver.navigate.to url
-    if @driver.page_source.gsub(',','') =~ /there have been more than ([\d]+) tests conducted/
+    s = @driver.page_source.gsub(',','')
+    @s += "\nBREAK\n" + s
+    if (s =~ /there have been more than ([\d]+) tests conducted/) || (s =~ /(\d+) laboratory tests conducted/) || (s =~ /more than (\d+) results have been received/)
       h[:tested] = string_to_i($1)
     else
       @errors << 'missing tested'
@@ -602,11 +602,18 @@ class Crawler
       end
     end
     crawl_page url_death
-    sleep 2
-    if @driver.page_source.gsub(',','').scan( /"\s*Deceased ([\d]+)\s*"/).first
-      h[:deaths] = string_to_i($1)
-    else
-      @errors << 'missing deaths'
+    sec = SEC/2
+    loop do
+      sec -= 1
+      sleep 1
+      puts 'sleeping'
+      if @driver.page_source.gsub(',','').scan( /"\s*Deceased ([\d]+)\s*"/).first
+        h[:deaths] = string_to_i($1)
+        break
+      elsif sec == 0
+        @errors << 'missing deaths'
+        break
+      end
     end
     # TODO counties is available in x
     # age in root page
@@ -1005,17 +1012,19 @@ class Crawler
         break if sec == 0
       end
     end
-    if x = cols.select {|v,i| v=~/Approximate number of completed tests from the MDH /}.first
+    if x = cols.select {|v,i| v=~/Total approximate number of completed tests:/}.first
       h[:tested] = string_to_i(x.strip.split.last)
     else
       @errors << 'missing tested'
     end
+=begin
     if x = cols.select {|v,i| v=~/Approximate number of completed tests from external/}.first
       h[:tested] = 0 unless h[:tested]
       h[:tested] += string_to_i(x.strip.split.last)
     else
       @errors << 'missing tested2'
     end
+=end
     if (x = cols.map.with_index {|v,i| [v,i]}.select {|v,i| v=~/Total Positive: /i}.first) &&
       x[0] =~ /Total Positive: ([0-9]+)/i
       h[:positive] = string_to_i($1)
@@ -1100,7 +1109,7 @@ class Crawler
     crawl_page
     sec = SEC/3
     loop do
-      @s = @driver.find_elements(class: 'layout-reference')[0].text
+      @s = @driver.find_elements(class: 'layout-reference')[0].text rescue ''
 # County is available
       flag = false
       if @s =~ /Total Cases\n([^\n]+)\n/
@@ -1629,7 +1638,7 @@ class Crawler
     else
       @errors << 'missing pos neg deaths'
     end
-    rows = @driver.find_elements(class: 'ms-rteTable-default').map {|i| i.text.gsub(',','')}.select {|i| i=~/County\s+Number of Cases\sDeaths/}.first.split("\n")
+    rows = @driver.find_elements(class: 'ms-rteTable-default').map {|i| i.text.gsub(',','')}.select {|i| i=~/County\sNumber of Ca/}.first.split("\n")
     rows.shift
     h[:counties] = []
     for r in rows
@@ -1864,7 +1873,7 @@ crawl_page
       else
         flag = false
       end
-      if x = @s.scan(/\n([^\n]+)\nCases Reported\n([^\n]+)\nDeaths\n/).first
+      if x = @s.scan(/\n([^\n]+)\nCases Reported\n([^\n]+)\nFatalities\n/).first
         h[:positive] = string_to_i(x[0])
         h[:deaths] = string_to_i(x[1])
       else
@@ -2072,7 +2081,7 @@ crawl_page
     loop do
       begin
         cols = @driver.find_elements(class: 'bluebkg')[0].text.split("\n").map {|i| i.strip}.select {|i| i.size > 0}
-        break
+        break if cols.size >= 12
       rescue => e
         if sec == 0
           @errors << 'failed to parse table'
@@ -2101,7 +2110,7 @@ crawl_page
     if x = cols.map.with_index {|v,i| [v,i]}.select {|v,i| v=~/Tests Pending/}.first
       h[:pending] = string_to_i(cols[x[1]-1])
     else
-      @errors << 'missing pending'
+      @warnings << 'missing pending'
     end
     if (x=cols.select {|i| i=~/Updated:/i}.first) && x =~ /updated:(.+)/i
       h[:date] = $1.strip
