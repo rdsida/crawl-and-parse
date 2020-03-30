@@ -5,7 +5,7 @@ Thanks!
 
 The main code is in crawler.rb. The crawler and parsers are there for the 50
 US states and DC. The focus is to collect offical published COVID-19 statistics.
-In the bin/ folder are useful commands to run the crawl and parse or all states
+In the bin/ folder are useful commands to run the crawl and parse on all states
 or specific ones.
 
 Only the main fields are being captured, so more work is needed to capture additional

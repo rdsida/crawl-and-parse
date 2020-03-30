@@ -1635,6 +1635,54 @@ class Crawler
     h
   end
 
+  def parse_pr(h)
+    crawl_page
+    sec = SEC
+    cols = []
+    table=nil
+    loop do
+      begin
+        table = @driver.find_elements(class: 'ms-rteTableEvenCol-10').first
+        break
+      rescue => e
+        puts 'sleeping'
+        sleep 1
+        sec -= 1
+        break if sec == 0
+      end
+    end
+    h2 = table.find_elements(tag_name: 'h2').first
+    h[:tested] = h2.text.gsub(/,/,'').to_i
+    table = nil
+    loop do
+      begin
+        table = @driver.find_elements(class: 'ms-rteTableOddCol-10').first
+        break
+      rescue => e
+        puts 'sleeping'
+        sleep 1
+        sec -= 1
+        break if sec == 0
+      end
+    end
+    h2 = table.find_elements(tag_name: 'h2').first
+    h[:positive] = h2.text.gsub(/,/,'').to_i
+    loop do
+      begin
+        table = @driver.find_elements(class: 'ms-rteTableEvenCol-10')[2]
+        break
+      rescue => e
+        puts 'sleeping'
+        sleep 1
+        sec -= 1
+        break if sec == 0
+      end
+    end
+    h2 = table.find_elements(tag_name: 'h2').first
+    h[:deaths] = h2.text.gsub(/,/,'').to_i
+    h
+  end  
+
   def parse_ri(h)
     crawl_page
     sec = SEC
