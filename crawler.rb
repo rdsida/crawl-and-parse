@@ -15,7 +15,7 @@ require 'pdf-reader'
 
 # missing counties: ca
 # missing tested:   de, oh
-# missing deaths:   ky, wy
+# missing deaths:   wy
 
 SEC = 60 # seconds to wait for page to load
 OFFSET = nil # if set, start running at that state
@@ -762,10 +762,12 @@ class Crawler
     else
       @errors << 'missing positive'
     end
-    # TODO no death data
-    url = 'https://governor.ky.gov/news'
-    crawl_page url
-    h[:deaths]=9
+    if (x = cols.map.with_index {|v,i| [v,i]}.select {|v,i| v=~/^Deaths:/}.first) && x[0] =~ /^Deaths: ([0-9]+)/
+      h[:deaths] = string_to_i($1)
+    else
+      @errors << 'missing deaths'
+    end
+    #url = 'https://governor.ky.gov/news'
     byebug unless @auto_flag
     h
   end
@@ -831,12 +833,8 @@ class Crawler
       `curl #{url} -o #{@path}#{@st}/#{@filetime}_1.pdf`
       `open #{@path}#{@st}/#{@filetime}_1.pdf` unless @auto_flag
       reader = PDF::Reader.new("#{@path}#{@st}/#{@filetime}_1.pdf")
+=begin
       result = reader.page(1).text.gsub(/\s+/,' ').gsub(',','')
-      if result =~ /Deaths Attributed to COVID-19 ([\d]+)/
-        h[:deaths] = string_to_i($1)
-      else
-        @errors << 'missing deaths'
-      end
       rows = reader.page(1).text.split("\n").map {|i| i.gsub(/\s+/,' ').gsub(',','')}
       j = rows.map.with_index {|v,i| [v,i]}.select {|v,i| v=~/^County/}.first[1]
       i = 0
@@ -855,7 +853,13 @@ class Crawler
       if h[:counties].size < 13
         @errors << 'missing counties'
       end
+=end
       result = reader.page(2).text.gsub(/\s+/,' ').gsub(',','')
+      if result =~ /(\d+) Attributed to COVID-19/
+        h[:deaths] = string_to_i($1)
+      else
+        @errors << 'missing deaths'
+      end
       if result =~ /Total ?Patients ?Tested\*? [\d]+ ([\d]+)/
         h[:tested] = string_to_i($1) 
       else
