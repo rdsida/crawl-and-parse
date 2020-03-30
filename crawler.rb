@@ -385,20 +385,27 @@ class Crawler
 
   def parse_de(h)
     crawl_page
-    @s = @s.encode('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '')
-    if @s =~ /https:\/\/dshs.maps.arcgis.com([^"]+)"/
-      crawl_page('https://dshs.maps.arcgis.com' + $1)
+    if url = @s.scan(/https:\/\/arcg\.is\/[^'"]+/).first
+      crawl_page url
     else
       @errors << 'dashboard url not found'
       return h
     end
     sec = SEC/2
     loop do
-      @s = @driver.find_elements(class: 'layout-reference')[0].text
-      if @s =~ /Total Cases\n([^\n]+)/ #\nTotal Deaths\n([^\n]+)\n/
+      @s = @driver.find_elements(class: 'dashboard-page')[0].text.gsub(',','')
+      if @s =~ /Total Cases\n(\d+)/
         h[:positive] = string_to_i($1)
-        #h[:deaths] = string_to_i($2)
-        break
+        @driver.find_elements(class: 'tab-title').select {|i| i.text =~ /Total Deaths/}[0].click
+        s = @driver.find_elements(class: 'dashboard-page')[0].text
+        @s += "\nBREAK\n" + s
+        if s =~ /Total Deaths\n(\d+)\n/
+          h[:deaths] = string_to_i($1)
+          break
+        else
+          @errors << 'missing deaths'
+          break
+        end
       end
       sec -= 1
       if sec == 0
@@ -409,9 +416,7 @@ class Crawler
       sec -= 1
       sleep 1
     end
-    @errors << 'DE took deaths off'
     # https://news.delaware.gov/2020/03/29/public-health-announces-1-additional-death-18-additional-positive-cases-in-delaware/
-    h[:deaths] = 6
     # TODO tested, not available
     # TODO counties
     h
