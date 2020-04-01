@@ -194,9 +194,9 @@ open("/Users/danny/Downloads/Story 1.pdf")
 `mv "/Users/danny/Downloads/Story 1.pdf"  #{@path}#{@st}/#{@filetime}_1.pdf`
 puts 'manual entry'
 
-h[:tested] = 19371
-h[:positive]=1289
-h[:deaths]=24
+h[:tested] = 21058
+h[:positive]=1413
+h[:deaths]=29
 
 
 byebug unless @auto_flag
@@ -767,9 +767,9 @@ byebug
 
   def parse_ks(h)
 
-h[:positive]=428
-h[:negative]=4996
-h[:deaths]=9
+h[:positive]=482
+h[:negative]=5411
+h[:deaths]=10
 @errors << 'page broken for now'
 byebug unless @auto_flag
 return h
@@ -1259,10 +1259,10 @@ return h
       return h
     end
     puts "image file for ND"
-    h[:tested] = 4257
-    h[:positive] = 126
-    h[:negative] = 4131
-    h[:hospitalized] = 21
+    h[:tested] = 4493
+    h[:positive] = 142
+    h[:negative] = 4351
+    h[:hospitalized] = 23
     h[:pending] = 0
     h[:deaths] = 3 # TODO manual
     pngs = @s.scan(/files\/documents\/Files\/MSS\/coronavirus[^'"]+/)
@@ -1782,16 +1782,16 @@ return h
     sec = SEC
     loop do
       begin
-        break if (@s = @driver.find_elements(class: 'panel')[0].text.gsub(',','')) =~ /Number of Rhode Island COVID-19 positive \(including/
+        break if (@s = @driver.find_elements(class: 'master')[0].text.gsub(',','')) =~ /Number of Rhode Island COVID-19 positive \(including/
       rescue => e
-        sec -= 1
-        if sec == 0
-          @errors << 'failed to parse'
-          return h
-        end
-        puts "sleeping...#{sec}"
-        sleep(1)
       end
+      sec -= 1
+      if sec == 0
+        @errors << 'failed to parse'
+        return h
+      end
+      puts "sleeping...#{sec}"
+      sleep(1)
     end
     cols = @s.split("\n")
     if (x = cols.select {|v,i| v=~/^Number of Rhode Island COVID-19 positive \(including/}.first)
@@ -2141,7 +2141,7 @@ crawl_page
       @errors << "missing date"
     end
     @s = @driver.find_elements(id: 'main')[0].text.gsub(',','')
-    if @s =~ /\nNegative ([0-9]+)\nPositive ([0-9]+)\nDeaths ([0-9]+)\n/
+    if @s =~ /Negative Test Result (\d+)\nPositive Test Result (\d+)\nHospitalizations [^\n]+\nDeaths (\d+)\n/
       h[:positive] = string_to_i($2)
       h[:negative] = string_to_i($1)
       h[:deaths] = string_to_i($3)
