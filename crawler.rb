@@ -2,22 +2,23 @@ require 'byebug'
 require 'nokogiri'
 require 'selenium-webdriver'
 require 'pdf-reader'
+require 'humanize'
 
 # not automatic:
-# ['ak', "az", "nd"]
+# ['ak', "az", "nd", 'wy']
 # ak and nd have images
 # az is csv download
 
 # counties with death done: mi, wa, pa
-# counties done without death: ny, nj, ma, ct(towns)
+# counties done without death: ny, nj, ma, ct(towns)broken
 
 # counties available: de, ia
 
 # missing counties: ca
-# missing tested:   de, oh
-# missing deaths:   wy
+# missing tested:   de, ms, oh, me (neg)
+# missing deaths:   
 
-SEC = 60 # seconds to wait for page to load
+SEC = 30 # seconds to wait for page to load
 OFFSET = nil # if set, start running at that state
 SKIP_LIST = [] # skip these states
 
@@ -73,7 +74,7 @@ class Crawler
     @s += "\nBREAK\n" + s
     puts 'AK: tested data in image?'
     `curl http://dhss.alaska.gov/dph/Epi/id/PublishingImages/COVID-19/COVID-1_AKtesting_cumulative.png > #{@path}#{@st}/#{@filetime}_1.png`
-    h[:tested] = 2001+1653 # from image! save image?
+    h[:tested] = 2647+1956 # from image! save image?
     if @auto_flag
       @warnings << 'tested was not manually entered'
     else
@@ -82,7 +83,6 @@ class Crawler
     end
     # Cumulative number of cases hospitalized to date:  0
     # positive by region available
-    # no death data
     # TODO TESTED manual
     h
   end
@@ -95,9 +95,11 @@ class Crawler
     sec = SEC
     loop do
       t = @driver.find_elements(class: 'dashboard-page')[0]
-      if t && ((s=t.text).gsub(',','')) =~ /CONFIRMED\n([\d]+)\nTOTAL TESTED\*?\n([\d]+)\nDEATHS\s?\n([\d]+)/
+      #if t && ((s=t.text).gsub(',','')) =~ /CONFIRMED\n([\d]+)\nTOTAL TESTED\*?\n([\d]+)\nDEATHS\s?\n([\d]+)/
+      if t && ((s=t.text).gsub(',','')) =~ /CONFIRMED\n(\d+)\nTOTAL TESTED\n(\d+)\nREPORTED DEATHS\n(\d+)\nDIED FROM ILLNESS\n(\d+)/
         h[:tested] = string_to_i($2)
     	h[:deaths] = string_to_i($3)
+        h[:deaths2] = string_to_i($4) # TODO what is difference?
         h[:positive] = string_to_i($1)
         @s += "\nBREAK\n" + s
         break
@@ -107,7 +109,7 @@ class Crawler
         @errors << 'parse failed'
         break
       end
-      puts 'sleeping'
+      puts "sleeping...#{sec}"
       sleep 1
     end
     # counties available
@@ -145,7 +147,7 @@ class Crawler
         flag = true
       end
       if flag
-        puts 'sleeping' 
+        puts "sleeping...#{sec}"
         sec -= 1
         sleep 1
         if sec == 0
@@ -160,6 +162,47 @@ class Crawler
   end
 
   def parse_az(h)
+
+    if @auto_flag
+      puts "skipping AZ"
+      h[:skip] = true
+      return h
+    end
+
+    #unless @auto_flag
+if true
+      @url = 'https://www.azdhs.gov/preparedness/epidemiology-disease-control/infectious-disease-epidemiology/index.php#novel-coronavirus-home'
+      crawl_page
+      url = @driver.page_source.scan(/https:\/\/tableau\.azdhs\.gov[^'"]+/).select {|i| i=~/dashboard/i}[0]
+      sleep 4
+      crawl_page url
+      sleep 3
+      @driver.find_elements(class: 'tabCanvas')[3].click
+      @driver.find_elements(class: 'tabToolbarButton').select {|i| i.text =~ /Download/}[0].click
+      x = @driver.find_elements(class: "tab-downloadDialog")[0]
+      x.find_elements(:css, "*")[4].click
+      x = @driver.find_elements(class: "tab-pdf-dialog-buttons")[0]
+sleep 3
+      x.find_elements(:css, "*")[1].click
+      `rm "/Users/danny/Downloads/Story 1.pdf"`
+      sleep 3
+      @driver.find_elements(class: "tabDownloadFileButton")[0].click
+      sleep 2
+      #reader = PDF::Reader.new("/Users/danny/Downloads/Story 1.pdf")
+      #result = reader.page(1).text.gsub(/\s+/,' ').gsub(',','')
+open("/Users/danny/Downloads/Story 1.pdf")
+`mv "/Users/danny/Downloads/Story 1.pdf"  #{@path}#{@st}/#{@filetime}_1.pdf`
+puts 'manual entry'
+
+h[:tested] = 19371
+h[:positive]=1289
+h[:deaths]=24
+
+
+byebug unless @auto_flag
+      return h
+    end
+
     # TODO use https://www.azdhs.gov/preparedness/epidemiology-disease-control/infectious-disease-epidemiology/index.php#novel-coronavirus-home
 =begin
     @driver.navigate.to(@url) 
@@ -180,7 +223,7 @@ class Crawler
     @driver.find_elements(class: "tabCanvas")[0].click
     @driver.find_elements(class: "download")[0].click
     x = @driver.find_elements(class: "tab-downloadDialog")[0]
-
+    
 #x.find_elements(:css, "*")[4].click
 #byebug
 #@driver.find_elements(class: "tab-pdf-dialog-buttons")[0].click
@@ -237,6 +280,15 @@ class Crawler
     end
     `mv /Users/danny/Downloads/Testing_crosstab.csv #{@path}az/#{Time.now.to_s[0..18].gsub(' ','_')}_Testing_crosstab.csv`
     `mv /Users/danny/Downloads/Cases_crosstab.csv #{@path}az/#{Time.now.to_s[0..18].gsub(' ','_')}_Cases_crosstab.csv`
+
+      @url = 'https://www.azdhs.gov/preparedness/epidemiology-disease-control/infectious-disease-epidemiology/index.php#novel-coronavirus-home'
+      crawl_page
+      url = @driver.page_source.scan(/https:\/\/tableau\.azdhs\.gov[^'"]+/).select {|i| i=~/dashboard/i}[0]
+      crawl_page url
+puts "manual tested:"
+byebug
+
+
     h
   end
 
@@ -254,7 +306,7 @@ class Crawler
         break
       end
       sec -= 1
-      puts 'sleeping'
+      puts "sleeping...#{sec}"
       sleep 1
     end
     url = 'https://www.cdph.ca.gov/Programs/OPA/Pages/New-Release-2020.aspx'
@@ -266,7 +318,7 @@ class Crawler
     end
     # Negative from CDPH report of 778 tests on 3/7, and 88 pos => 690 neg
     crawl_page url
-    if (x=@driver.find_element(id: 'MainContent')) && x.text =~ /pproximately ([0-9,]+) tests had been conducted in California/
+    if (x=@driver.find_element(id: 'MainContent')) && x.text =~ /pproximately ([0-9,]+)[\+\*]+ tests had been conducted in California/
       h[:tested] = string_to_i($1)
     else
       @errors << 'missing tested'
@@ -306,18 +358,19 @@ class Crawler
       else
         @errors << 'missing positive'
       end
-      if result =~ / ([\d]+) residents have died /
-        h[:deaths] = string_to_i($1)
+      if result =~ /\.([^\.]+) residents have died/
+        h[:deaths] = string_to_i($1.strip)
       else
         @errors << 'missing deaths'
       end
-      result = reader.page(4).text.gsub(/\s+/,' ').gsub(',','') 
-      if result =~ / in total more than ([\d]+) tests have been reported/
+      result = reader.page(7).text.gsub(/\s+/,' ').gsub(',','') 
+      if result =~ /more than ([\d]+) tests have been reported/
         h[:tested] = string_to_i($1)
       else
         @errors << 'missing tested'
       end
       # towns, not counties
+=begin
       h[:towns] = []
       rows = reader.page(5).text.gsub(',','').split("\n")
       for r in rows
@@ -345,6 +398,7 @@ class Crawler
       if h[:towns].size < 169
         @errors << 'missing towns'
       end
+=end
     else
       @errors << 'missing pdf'
     end
@@ -392,7 +446,7 @@ class Crawler
       @errors << 'dashboard url not found'
       return h
     end
-    sec = SEC/2
+    sec = SEC/4
     loop do
       @s = @driver.find_elements(class: 'dashboard-page')[0].text.gsub(',','')
       if @s =~ /Total Cases\n(\d+)/
@@ -410,13 +464,15 @@ class Crawler
         @errors << 'parse failed'
         return h
       end
-      puts 'sleeping'
+      puts "sleeping... #{sec}"
       sec -= 1
       sleep 1
     end
     # https://news.delaware.gov/2020/03/29/public-health-announces-1-additional-death-18-additional-positive-cases-in-delaware/
     # TODO tested, not available
-    # TODO counties
+    # https://news.delaware.gov/2020/03/31/covid-19-in-delaware-public-health-announces-3-additional-deaths-55-more-positive-cases-in-delaware/
+    h[:negative] = 3696
+    # TODO countie
     h
   end
 
@@ -452,7 +508,7 @@ class Crawler
           break
         else
           sec -= 1
-          puts 'sleeping'
+          puts "sleeping1...#{sec}"
           sleep 1
           if sec == 0
             @errors << '2nd dash link not found'
@@ -474,12 +530,12 @@ class Crawler
             end
           rescue
           end
-          if s == 0
+          if sec == 0
             @errors << 'missing tested'
             break
           end
           sec -= 1
-          puts 'sleeping'
+          puts "sleeping2...#{sec}"
           sleep 1
         end
       end
@@ -537,14 +593,14 @@ class Crawler
     tables = @driver.find_elements(class: 'data_list').map {|i| i.text.gsub(',','')}
     if t=s.scan(/Total \(new\):\s([\d]+)/).first
       h[:positive] = string_to_i(t[0]) 
-    elsif (t=tables.select {|i| i=~/Total cases/}.first) && t =~ /Total cases: ([\d]+)/
+    elsif (t=tables.select {|i| i=~/Total cases/}.first) && t =~ /Total cases:\n([\d]+)/
       h[:positive] = string_to_i($1)
     else
       @errors << 'missing positive'
     end
     if t = s.scan(/Total Deaths:\s([\d]+)/).first
       h[:deaths] = string_to_i(t[0])
-    elsif (t=tables.select {|i| i=~/Hawaii deaths/}.first) && t =~ /Hawaii deaths: ([\d]+)/
+    elsif (t=tables.select {|i| i=~/Hawaii deaths/}.first) && t =~ /Hawaii deaths:\s([\d]+)/
       h[:deaths] = string_to_i($1)
     else
       @errors << 'missing deaths'
@@ -557,9 +613,10 @@ class Crawler
     @driver.navigate.to url
     s = @driver.page_source.gsub(',','')
     @s += "\nBREAK\n" + s
-    if (s =~ /there have been more than ([\d]+) tests conducted/) || (s =~ /(\d+) laboratory tests conducted/) || (s =~ /more than (\d+) results have been received/)
-      h[:tested] = string_to_i($1)
+    if @driver.find_elements(class: 'primary-content')[0].text.gsub(',','') =~ /Hawai.?i Totals\s\d+\s\d+\s(\d+)\s(\d+)/
+      h[:tested] = string_to_i($2)
     else
+      byebug unless @auto_flag
       @errors << 'missing tested'
     end
     h
@@ -590,7 +647,7 @@ class Crawler
     loop do
       sec -= 1
       sleep 1
-      puts 'sleeping'
+      puts "sleeping...#{sec}"
       x = @driver.find_elements(class: 'dock-container')[0]
       if x && (x=x.text.gsub(',','')) =~ /\nConfirmed Cases\n([^\n]+)\n/
         h[:positive] = string_to_i($1)
@@ -606,7 +663,7 @@ class Crawler
     loop do
       sec -= 1
       sleep 1
-      puts 'sleeping'
+      puts "sleeping...#{sec}"
       if @driver.page_source.gsub(',','').scan( /"\s*Deceased ([\d]+)\s*"/).first
         h[:deaths] = string_to_i($1)
         break
@@ -678,7 +735,7 @@ class Crawler
     sec = SEC/2
     loop do
       sec -= 1
-      puts 'sleeping'
+      puts "sleeping...#{sec}"
       sleep 1
       @s = @driver.find_elements(class: 'claro')[0].text
       rows = @s.split("\n")
@@ -709,6 +766,14 @@ class Crawler
   end
 
   def parse_ks(h)
+
+h[:positive]=428
+h[:negative]=4996
+h[:deaths]=9
+@errors << 'page broken for now'
+byebug unless @auto_flag
+return h
+
     puts 'pdf might have more data'
     crawl_page
     sec = SEC
@@ -718,7 +783,7 @@ class Crawler
         break
       end
       sec -= 1
-      puts 'sleeping'
+      puts "sleeping...#{sec}"
       sleep 1
       if sec == 0
         @errors << 'missing url'
@@ -737,7 +802,7 @@ class Crawler
         break
       end
       sec -= 1
-      puts 'sleeping'
+      puts "sleeping...#{sec}"
       sleep 1
       if sec == 0
         @errors << 'missing positive and deaths'
@@ -783,7 +848,7 @@ class Crawler
     sec = SEC/2
     loop do
       sec -= 1
-      puts 'sleeping' 
+      puts "sleeping...#{sec}"
       sleep 1
       begin
         @s = @driver.find_elements(class: 'layout-reference')[0].text
@@ -824,7 +889,7 @@ class Crawler
         break
       end
       sec -= 1
-      puts 'sleeping'
+      puts "sleeping...#{sec}"
       sleep 1
     end
     puts "pdf? manual entry of tested from pdf"
@@ -876,7 +941,7 @@ class Crawler
     crawl_page
     sec = SEC
     while sec > 0 && !(@driver.find_elements(class: 'container').map {|i| i.text}.select {|i| i=~/Confirmed Cases/}[0] =~ /COVID-19 Statistics in Maryland\nNumber of Confirmed Cases: ([^\n]+)\n/)
-      puts 'sleeping...'
+      puts "sleeping...#{sec}"
       sleep(1)
       sec -= 1
     end
@@ -923,7 +988,7 @@ class Crawler
     if x = cols.map.with_index {|v,i| [v,i]}.select {|v,i| v=~/^Negative Tests/}.first
       h[:negative] = string_to_i(cols[x[1]+4])
     else
-      @errors << 'missing negative'
+      @warnings << 'missing negative'
     end
     elsif cols.size == 6
     if x = cols.map.with_index {|v,i| [v,i]}.select {|v,i| v=~/^Confirmed Cases/}.first
@@ -1010,7 +1075,7 @@ class Crawler
         cols = @driver.find_elements(id: 'body')[0].text.gsub(',','').split("\n").map {|i| i.strip}.select {|i| i.size > 0}
         break
       rescue => e
-        puts 'sleeping'
+        puts "sleeping...#{sec}"
         sleep 1
         sec -= 1
         break if sec == 0
@@ -1082,7 +1147,7 @@ class Crawler
     if s =~ /Total individuals tested for COVID-19: ([0-9]+)[^0-9]/i
       h[:tested] = string_to_i($1)
     else
-      @errors << 'missing tested'
+      @warnings << 'missing tested'
     end
     # counties in a nice table
     h
@@ -1107,7 +1172,7 @@ class Crawler
         return h
       end
       sec -= 1
-      puts 'sleeping'
+      puts "sleeping...#{sec}"
       sleep 1
     end
     crawl_page
@@ -1138,7 +1203,7 @@ class Crawler
           @errors << 'parse failed'
           return h
         end
-        puts 'sleeping' 
+        puts "sleeping...#{sec}"
         sleep 1
       else
         break
@@ -1158,7 +1223,7 @@ class Crawler
         break
       rescue => e
         sleep 1
-        puts 'sleeping'
+        puts "sleeping...#{sec}"
         sec -= 1
         break if sec == 0
       end
@@ -1194,12 +1259,12 @@ class Crawler
       return h
     end
     puts "image file for ND"
-    h[:tested] = 3837
-    h[:positive] = 109
-    h[:negative] = 3728
-    h[:hospitalized] = 19
+    h[:tested] = 4257
+    h[:positive] = 126
+    h[:negative] = 4131
+    h[:hospitalized] = 21
     h[:pending] = 0
-    h[:deaths] = 2 # TODO manual
+    h[:deaths] = 3 # TODO manual
     pngs = @s.scan(/files\/documents\/Files\/MSS\/coronavirus[^'"]+/)
     i = 0
     for png in pngs
@@ -1252,7 +1317,7 @@ class Crawler
         @errors << 'parse failed'
         break
       end
-      puts 'sleeping'
+      puts "sleeping...#{sec}"
       sleep 1
     end
     h
@@ -1358,7 +1423,7 @@ class Crawler
         @errors << 'counties failed'
         break
       end
-      puts 'sleeping'
+      puts "sleeping...#{sec}"
       sleep 1
     end
     if h[:counties].size < 21
@@ -1386,7 +1451,7 @@ class Crawler
           return h
         end
         sec -= 1
-        puts 'sleeping'
+        puts "sleeping...#{sec}"
         sleep 1
       end
     end # loop
@@ -1425,7 +1490,7 @@ class Crawler
     @s = ''
     sec = SEC * 3
     loop do
-      puts 'sleeping'
+      puts "sleeping...#{sec}"
       sleep 1
       sec -= 1
       if sec == 0
@@ -1515,7 +1580,7 @@ class Crawler
           return h
         end
         sec -= 1
-        puts 'sleeping'
+        puts "sleeping...#{sec}"
         sleep 1
       end
     end # loop
@@ -1536,6 +1601,8 @@ class Crawler
     end
     # counties available
     # TODO tests not available
+    # https://coronavirus.ohio.gov/wps/wcm/connect/gov/c831a1c5-1a91-41ba-837d-ddbcba2af6c5/3-30+Presser+Final+%281%29.pdf?MOD=AJPERES&CONVERT_TO=url&CACHEID=ROOTWORKSPACE.Z18_M1HGGIK0N0JO00QO9DDDDM3000-c831a1c5-1a91-41ba-837d-ddbcba2af6c5-n4IWbZu
+    h[:tested] = 27275
     h
   end
 
@@ -1592,7 +1659,7 @@ class Crawler
           return h
         end
         sec -= 1
-        puts 'sleeping'
+        puts "sleeping...#{sec}"
         sleep 1
       end
     end # loop
@@ -1672,7 +1739,7 @@ class Crawler
         table = @driver.find_elements(class: 'ms-rteTableEvenCol-10').first
         break
       rescue => e
-        puts 'sleeping'
+        puts "sleeping...#{sec}"
         sleep 1
         sec -= 1
         break if sec == 0
@@ -1686,7 +1753,7 @@ class Crawler
         table = @driver.find_elements(class: 'ms-rteTableOddCol-10').first
         break
       rescue => e
-        puts 'sleeping'
+        puts "sleeping...#{sec}"
         sleep 1
         sec -= 1
         break if sec == 0
@@ -1699,7 +1766,7 @@ class Crawler
         table = @driver.find_elements(class: 'ms-rteTableEvenCol-10')[2]
         break
       rescue => e
-        puts 'sleeping'
+        puts "sleeping...#{sec}"
         sleep 1
         sec -= 1
         break if sec == 0
@@ -1722,7 +1789,7 @@ class Crawler
           @errors << 'failed to parse'
           return h
         end
-        puts 'sleeping'
+        puts "sleeping...#{sec}"
         sleep(1)
       end
     end
@@ -1765,7 +1832,7 @@ class Crawler
           @errors << 'failed to parse'
           return h
         end
-        puts 'sleeping'
+        puts "sleeping...#{sec}"
         sleep(1)
       end
     end
@@ -1803,7 +1870,7 @@ class Crawler
         end
         sec -= 1
         break if sec == 0
-        puts 'sleeping'
+        puts "sleeping...#{sec}"
         sleep 1
       end
     else
@@ -1825,9 +1892,11 @@ class Crawler
       @errors << "missing pos neg pending"
     end
     if (t = tables.select {|i| i=~/COVID-19 IN SOUTH DAKOTA/}[0]) &&
-      t =~ /Cases ([0-9]+) Deaths ([0-9]+) Recovered ([0-9]+)/
-      h[:deaths] = string_to_i($2)
-      h[:recovered] = string_to_i($3)
+      #t =~ /Cases ([0-9]+) Deaths ([0-9]+) Recovered ([0-9]+)/
+      t =~ /Cases\s(\d+)\sHospitalized\s(\d+)\sDeaths\s(\d+)\sRecovered\s(\d+)\s/
+      h[:hospitalzed] = string_to_i($2)
+      h[:deaths] = string_to_i($3)
+      h[:recovered] = string_to_i($4)
     else
       @errors << "missing deaths"
     end
@@ -1890,7 +1959,7 @@ crawl_page
         @errors << 'parse failed'
         break
       end
-      puts 'sleeping'
+      puts "sleeping...#{sec}"
       sleep 1
     end
     h
@@ -1898,11 +1967,13 @@ crawl_page
 
   def parse_ut(h)
     crawl_page
-    @s = @driver.find_elements(class: 'dashboard-page-wrapper').first.text
-    if @s =~ /Report Date: ([^\n]+)\n([^\n]+)\nCOVID-19 Cases\n([^\n]+)*\nReported People Tested\n([^\n]+)\nCOVID-19 Deaths\n/
-      h[:date] = $1
-      h[:positive] = string_to_i($2)
-      h[:tested] = string_to_i($3)
+    @s = @driver.find_elements(class: 'dashboard-page-wrapper').first.text.gsub(',','')
+    #if @s =~ /Report Date: ([^\n]+)\n([^\n]+)\nCOVID-19 Cases\n([^\n]+)*\nReported People Tested\n([^\n]+)\nCOVID-19 Deaths\n/
+    #  h[:date] = $1
+    if @s =~ /\n(\d+)\nCOVID-19 Cases\n(\d+)\*?\nReported People Tested\n(\d+)\nCOVID-19 Hospitalizations\n(\d+)\nCOVID-19 Deaths/
+      h[:positive] = string_to_i($1)
+      h[:tested] = string_to_i($2)
+      h[:hospitalized] = string_to_i($3)
       h[:deaths] = string_to_i($4)
     else
       @errors << 'missing positive'
@@ -1937,7 +2008,7 @@ crawl_page
           @errors << 'click failed'
           break
         end
-        puts 'sleeping'
+        puts "sleeping...#{sec}"
         sleep(1)
       end
     end
@@ -1952,14 +2023,11 @@ crawl_page
     # TODO save this pdf in /data/va dir
     # might want to reference other text to make sure it hasn't changed
     # note that the ordering of numbers is different
-    if result.gsub(/\s+/, ' ').gsub(',','') =~ /\s([0-9]+) ([0-9]+) ([0-9]+) ([0-9]+)\sNumber of Cases/
-      h[:tested] = string_to_i($1)
-      h[:positive] = string_to_i($2)
-      h[:hospitalized] = string_to_i($3)
-      h[:deaths] = string_to_i($4)  
-    else
-      @errors << 'parse failed'
-    end
+    numbers = result.gsub(',','').scan(/\s(\d+)\s/)
+    h[:tested] = string_to_i(numbers[0][0])
+    h[:positive] = string_to_i(numbers[1][0])
+    h[:hospitalized] = string_to_i(numbers[2][0])
+    h[:deaths] = string_to_i(numbers[3][0])  
     h
   end
   
@@ -2003,35 +2071,40 @@ crawl_page
   def parse_wa(h)
     crawl_page
     sec = SEC
-    url = nil
+    urls = []
     loop do
-      url = @driver.page_source.scan(/https:\/\/[^'"]*powerbi\.com[^'"]+/)[0]
-      break if url
+      urls = @driver.page_source.scan(/https:\/\/[^'"]*powerbi\.com[^'"]+/)
+      break if urls.size > 1
       sec -= 1
       if sec == 0
         @errors << 'url missing'
         return h
       end
-      puts 'sleeping'
+      puts "sleeping...#{sec}"
       sleep 1
     end
-    crawl_page url
+    crawl_page urls[1]
     sec = SEC
     loop do
       begin
-        cols = @driver.find_elements(class: 'value').map {|i| i.text.gsub(',','').strip }.select {|i| (i=~/^\d+$/) && i.to_i>0 }.map {|i| i.to_i}.sort
-        if cols.size == 3
-          h[:deaths], h[:positive], h[:tested] = cols
+        #cols = @driver.find_elements(class: 'value').map {|i| i.text.gsub(',','').strip }.select {|i| (i=~/^\d+$/) && i.to_i>0 }.map {|i| i.to_i}.sort
+        #@s = @driver.find_elements(class: 'landingController')[0].text.gsub(',','')
+        #if @s =~ /Confirmed Cases\n Total Deaths\s+(\d+)\s(\d+)\s/
+        @s = @driver.find_elements(class: 'visual').map {|i| i.text.gsub(',','')}.select {|i| i=~/Total Deaths/}.first
+        if @s && @s =~ /Cases\nTotal Deaths\nTotal tests\nPercent Positive\n(\d+)\n(\d+)\n(\d+)\n/
+          h[:positive] = $1.to_i
+          h[:deaths] = $2.to_i
+          h[:tested] = $3.to_i
           break
         end
       rescue
       end
       sec -= 1
       if sec == 0
-        @errors << 'cols fail'
+        @errors << 'parse failed, no data'
         break
       end
-      puts 'sleeping'
+      puts "sleeping...#{sec}"
       sleep 1
     end
 =begin
@@ -2092,7 +2165,7 @@ crawl_page
           return h
         end
         sec -= 1
-        puts 'sleeping'
+        puts "sleeping...#{sec}"
         sleep 1
       end
     end # loop
@@ -2149,7 +2222,10 @@ crawl_page
     else
       @errors << "missing tested 3"
     end
-    # TODO no death data
+    url = 'https://health.wyo.gov/publichealth/infectious-disease-epidemiology-unit/disease/novel-coronavirus/covid-19-map-and-statistics/'
+    crawl_page url
+puts 'death manual'
+    byebug unless @auto_flag
     h
   end
 
@@ -2166,6 +2242,8 @@ crawl_page
       @s = @driver.find_element(class: 'landingController').text.gsub(',','') rescue ''
       if @s =~ /\n(\d+)\nTotal Cases/
         h[:positive] = $1.to_i
+byebug unless @auto_flag
+return h # death manual
       else
         flag = false
       end
@@ -2180,7 +2258,7 @@ crawl_page
         @errors << 'parse failed'
         break
       end
-      puts 'sleeping'
+      puts "sleeping...#{sec}"
       sleep 1
     end
     h
@@ -2188,12 +2266,17 @@ crawl_page
 
   def parse_smc(h)
     crawl_page
+h[:positive] = 309
+h[:deaths] = 10
+byebug unless @auto_flag
+=begin
     if @doc.css('table')[0].text.gsub(/\s+/,' ').gsub(',','') =~ /Positive (\d+) Deaths (\d+)/
       h[:positive] = $1.to_i
       h[:deaths] = $2.to_i
     else
       @errors << 'parse failed'
     end
+=end
     h
   end
 
@@ -2263,7 +2346,11 @@ crawl_page
       nil
     end
     return s if s.class == Integer
-    s = s.strip.gsub(',','') if s.class == String
+    if s.class == String
+      s = s.strip.gsub(',','').gsub('-',' ').gsub(/\s+/,' ').downcase
+      x = @h_numbers[s]
+      return x if x
+    end
     return 0 if s == "--"
     if s =~/^([0-9]+)\s?K/
       return $1.to_i * 1000
@@ -2341,6 +2428,9 @@ options = Selenium::WebDriver::Firefox::Options.new(profile: profile)
       @h_prev[st][:positive] = positive.to_i if positive.size > 0
       @h_prev[st][:deaths] = deaths.to_i if deaths.size > 0
     end
+
+    @h_numbers = {}
+    1000.times {|i| @h_numbers[i.humanize.gsub('-',' ')] = i}
   end
 
   def method_missing(m, h)

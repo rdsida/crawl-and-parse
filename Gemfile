@@ -17,3 +17,5 @@ gem "geckodriver-helper", "~> 0.24.0"
 gem "ffi", "~> 1.12"
 
 gem "pdf-reader", "~> 2.4"
+
+gem 'humanize'
