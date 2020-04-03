@@ -1,6 +1,6 @@
 state	tested	positive	deaths	tested crawl date	positive crawl date	deaths crawl date	tested source	positive source	deaths source
-ALAMEDA	294	294	7		2020-04-01 10:06:20 -0700	2020-04-01 10:06:20 -0700		http://www.acphd.org/2019-ncov.aspx	http://www.acphd.org/2019-ncov.aspx
-SANTACRUZ	49	49	1		2020-04-01 10:17:47 -0700	2020-04-01 10:17:47 -0700		http://www.santacruzhealth.org/HSAHome/HSADivisions/PublicHealth/CommunicableDiseaseControl/Coronavirus.aspx	http://www.santacruzhealth.org/HSAHome/HSADivisions/PublicHealth/CommunicableDiseaseControl/Coronavirus.aspx
-SCC	890	890	30		2020-04-01 10:06:08 -0700	2020-03-31 15:25:25 -0700		https://www.sccgov.org/sites/phd/DiseaseInformation/novel-coronavirus/Pages/dashboard.aspx	https://www.sccgov.org/sites/phd/DiseaseInformation/novel-coronavirus/Pages/dashboard.aspx
-SF	434	434	7		2020-04-01 10:17:45 -0700	2020-04-01 10:17:45 -0700		https://www.sfdph.org/dph/alerts/coronavirus.asp	https://www.sfdph.org/dph/alerts/coronavirus.asp
-SMC	309	309	10		2020-04-01 10:17:42 -0700	2020-04-01 10:17:42 -0700		https://www.smchealth.org/coronavirus	https://www.smchealth.org/coronavirus
+ALAMEDA	373	373	9		2020-04-02 16:03:59 -0700	2020-04-02 16:03:59 -0700		http://www.acphd.org/2019-ncov.aspx	http://www.acphd.org/2019-ncov.aspx
+SANTACRUZ	57	57	1		2020-04-02 16:04:03 -0700	2020-04-02 16:04:03 -0700		http://www.santacruzhealth.org/HSAHome/HSADivisions/PublicHealth/CommunicableDiseaseControl/Coronavirus.aspx	http://www.santacruzhealth.org/HSAHome/HSADivisions/PublicHealth/CommunicableDiseaseControl/Coronavirus.aspx
+SCC	1019	1019	36		2020-04-02 16:03:39 -0700	2020-04-02 16:03:39 -0700		https://www.sccgov.org/sites/phd/DiseaseInformation/novel-coronavirus/Pages/dashboard.aspx	https://www.sccgov.org/sites/phd/DiseaseInformation/novel-coronavirus/Pages/dashboard.aspx
+SF	450	450	7		2020-04-02 16:04:01 -0700	2020-04-02 16:04:01 -0700		https://www.sfdph.org/dph/alerts/coronavirus.asp	https://www.sfdph.org/dph/alerts/coronavirus.asp
+SMC	453	453	10		2020-04-02 16:06:44 -0700	2020-04-02 16:06:44 -0700		https://www.smchealth.org/coronavirus	https://www.smchealth.org/coronavirus
