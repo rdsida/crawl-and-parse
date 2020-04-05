@@ -1,6 +1,6 @@
 state	tested	positive	deaths	tested crawl date	positive crawl date	deaths crawl date	tested source	positive source	deaths source
-ALAMEDA	373	373	9		2020-04-02 16:03:59 -0700	2020-04-02 16:03:59 -0700		http://www.acphd.org/2019-ncov.aspx	http://www.acphd.org/2019-ncov.aspx
-SANTACRUZ	57	57	1		2020-04-02 16:04:03 -0700	2020-04-02 16:04:03 -0700		http://www.santacruzhealth.org/HSAHome/HSADivisions/PublicHealth/CommunicableDiseaseControl/Coronavirus.aspx	http://www.santacruzhealth.org/HSAHome/HSADivisions/PublicHealth/CommunicableDiseaseControl/Coronavirus.aspx
-SCC	1019	1019	36		2020-04-02 16:03:39 -0700	2020-04-02 16:03:39 -0700		https://www.sccgov.org/sites/phd/DiseaseInformation/novel-coronavirus/Pages/dashboard.aspx	https://www.sccgov.org/sites/phd/DiseaseInformation/novel-coronavirus/Pages/dashboard.aspx
-SF	450	450	7		2020-04-02 16:04:01 -0700	2020-04-02 16:04:01 -0700		https://www.sfdph.org/dph/alerts/coronavirus.asp	https://www.sfdph.org/dph/alerts/coronavirus.asp
+ALAMEDA	510	510	12		2020-04-04 17:30:23 -0700	2020-04-04 17:30:23 -0700		http://www.acphd.org/2019-ncov.aspx	http://www.acphd.org/2019-ncov.aspx
+SANTACRUZ	59	59	1		2020-04-03 13:01:11 -0700	2020-04-03 13:01:11 -0700		http://www.santacruzhealth.org/HSAHome/HSADivisions/PublicHealth/CommunicableDiseaseControl/Coronavirus.aspx	http://www.santacruzhealth.org/HSAHome/HSADivisions/PublicHealth/CommunicableDiseaseControl/Coronavirus.aspx
+SCC	1148	1148	39		2020-04-04 15:27:08 -0700	2020-04-04 15:27:08 -0700		https://www.sccgov.org/sites/phd/DiseaseInformation/novel-coronavirus/Pages/dashboard.aspx	https://www.sccgov.org/sites/phd/DiseaseInformation/novel-coronavirus/Pages/dashboard.aspx
+SF	529	529	8		2020-04-04 17:30:25 -0700	2020-04-04 17:30:25 -0700		https://www.sfdph.org/dph/alerts/coronavirus.asp	https://www.sfdph.org/dph/alerts/coronavirus.asp
 SMC	453	453	10		2020-04-02 16:06:44 -0700	2020-04-02 16:06:44 -0700		https://www.smchealth.org/coronavirus	https://www.smchealth.org/coronavirus

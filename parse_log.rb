@@ -122,6 +122,10 @@ end
 x=arr.map {|i| i.split("\t")}
 puts [x.map {|i| i[1].to_i}.sum, x.map {|i| i[2].to_i}.sum, x.map {|i| i[3].to_i}.sum].join("\t")
 
-`scp all.csv ubuntu@coronavirusapi.com:policydock/`
-`scp all.csv ubuntu@3.21.172.64:policydock/`
+if ARGV.size > 0
+  puts 'uploading'
+  `scp all.csv ubuntu@coronavirusapi.com:policydock/`
+else
+  puts 'did not upload'
+end
 
