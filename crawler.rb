@@ -5,7 +5,7 @@ require 'pdf-reader'
 require 'humanize'
 
 # not automatic:
-# ['ak', "az", 'id', 'ks', "nd", 'wy']
+# ['ak', "az", 'id', 'ks', "nd", 'ny', 'wy']
 # ak and nd have images
 # az is csv download
 
@@ -83,7 +83,7 @@ class Crawler
 
     puts 'AK: tested data in image?'
     `curl http://dhss.alaska.gov/dph/Epi/id/PublishingImages/COVID-19/COVID-1_AKtesting_cumulative.png > #{@path}#{@st}/#{@filetime}_1.png`
-    h[:tested] = 2894+2128  # from image! save image?
+    h[:tested] = 5024+2408 # from image! save image? # HARDCODE
     if @auto_flag
       @warnings << 'tested was not manually entered'
     else
@@ -186,7 +186,6 @@ class Crawler
   end
 
   def parse_az(h)
-
     if @auto_flag
       puts "skipping AZ"
       h[:skip] = true
@@ -218,10 +217,6 @@ open("/Users/danny/Downloads/Story 1.pdf")
 `mv "/Users/danny/Downloads/Story 1.pdf"  #{@path}#{@st}/#{@filetime}_1.pdf`
 puts 'manual entry'
 
-h[:tested] = 27160
-h[:positive]=2019
-h[:deaths]=52
-
 
 byebug unless @auto_flag
       return h
@@ -236,11 +231,6 @@ byebug unless @auto_flag
     end
 =end
     crawl_page
-    if @auto_flag
-      puts "skipping AZ"
-      h[:skip] = true
-      return h
-    end
     `rm /Users/danny/Downloads/Cases_crosstab.csv`
     `rm /Users/danny/Downloads/Testing_crosstab.csv`
     sleep(3)
@@ -387,7 +377,7 @@ byebug
       else
         @errors << 'missing positive'
       end
-      if result =~ /\.([^\.]+) residents have died/
+      if result =~ /been ([^\s]+) laboratory-confirmed COVID-19-associated death/
         h[:deaths] = string_to_i($1.strip)
       else
         @errors << 'missing deaths'
@@ -451,7 +441,12 @@ byebug
     end
     if (x = @s.scan(/Total Deaths:\s?([0-9]+)[^0-9]/)).size > 0
       h[:deaths] = string_to_i(x[0][0])
-    else
+    end
+    if (x = @s.scan(/Total Lives Lost:\s?([0-9]+)[^0-9]/)).size > 0
+      x = string_to_i(x[0][0])
+      h[:deaths] = x if !h[:deaths] || x > h[:deaths]
+    end
+    unless h[:deaths]
       @errors << "deaths missing"
     end
     h
@@ -459,7 +454,7 @@ byebug
 
   def parse_de(h)
     crawl_page
-    if url = @s.scan(/https:\/\/arcg\.is\/[^'"]+/).first
+    if url = @s.scan(/https:\/\/dshs.maps\.arcgis\.com\/apps\/opsdashboard\/index\.htm[^'"]+/).first
       crawl_page url
     else
       @errors << 'dashboard url not found'
@@ -468,14 +463,14 @@ byebug
     sec = SEC/4
     loop do
       @s = @driver.find_elements(class: 'dashboard-page')[0].text.gsub(',','')
-      if @s =~ /Total Cases\n(\d+)/
+      if @s =~ /Positive Cases\n(\d+)/
         h[:positive] = string_to_i($1)
         if @s =~ /Total Deaths\n(\d+)\n/
           h[:deaths] = string_to_i($1)
-          break
-        else
-          @errors << 'missing deaths'
-          break
+          if @s =~ /Negative Cases\n(\d+)/
+            h[:negative] = string_to_i($1)
+            break
+          end
         end
       end
       sec -= 1
@@ -490,8 +485,7 @@ byebug
     # https://news.delaware.gov/2020/03/29/public-health-announces-1-additional-death-18-additional-positive-cases-in-delaware/
     # TODO tested, not available
     # https://news.delaware.gov/2020/03/31/covid-19-in-delaware-public-health-announces-3-additional-deaths-55-more-positive-cases-in-delaware/
-    h[:negative] = 3696
-    # TODO countie
+    # TODO counties
     h
   end
 
@@ -540,7 +534,7 @@ byebug
         sec = SEC
         loop do
           begin
-            @driver.find_elements(class: 'tab-title')[1].click
+            @driver.find_elements(class: 'tab-title').select {|i| i.text =~ /Testing/}[0].click
             s = @driver.find_elements(class: 'dashboard-page')[0].text
             if s =~ /\nTotal Tests\n([^\n]+)\n/
               h[:tested] = string_to_i($1)
@@ -643,9 +637,8 @@ byebug
 
   def parse_ia(h)
     crawl_page
-    t = @driver.page_source.scan(/there have been ([^\s]+) negative COVID-19 test results reported/)
-    if t.size > 0
-      h[:negative] = string_to_i(t[0][0])
+    if  @driver.find_elements(class: 'full')[0].text.gsub(',','') =~ /there have been (\d+) negative COVID-19 test results/
+      h[:negative] = string_to_i($1)
     else
       @errors << 'missing negative'
     end
@@ -705,6 +698,8 @@ byebug
       byebug unless @auto_flag
       @errors << 'missing positive'
     end
+    puts "manual tested"
+    byebug unless @auto_flag
 =begin
     @s = @driver.find_elements(class: 'wp-block-column')[0].text.gsub(',','').gsub(/\s+/,' ')
     if (x=(@s =~ /Public Health District County Cases Deaths/)) &&
@@ -737,7 +732,7 @@ byebug
     else
       @errors << 'missing deaths'
     end
-    if x = cols.map.with_index {|v,i| [v,i]}.select {|v,i| v=~/^Total Persons Tested/i}.first
+    if x = cols.map.with_index {|v,i| [v,i]}.select {|v,i| v=~/^Total Tests Performed/i}.first
       h[:tested] = string_to_i(cols[x[1]+1])
     else
       @errors << 'missing tested'
@@ -768,7 +763,6 @@ byebug
   end
 
   def parse_ks(h)
-    h[:negative]=6454
     crawl_page
     sec = SEC
     loop do
@@ -1077,10 +1071,15 @@ byebug
     else
       @errors << 'missing positive'
     end
+    if (x = cols.map.with_index {|v,i| [v,i]}.select {|v,i| v=~/^Deaths: /}.first) &&
+      x[0] =~ /^Deaths: ([0-9]+)/
+      h[:deaths] = string_to_i($1)
+    end
     if (x = cols.map.with_index {|v,i| [v,i]}.select {|v,i| v=~/^Total deaths: /}.first) &&
       x[0] =~ /^Total deaths: ([0-9]+)/
       h[:deaths] = string_to_i($1)
-    else
+    end
+    unless h[:deaths]
       @errors << 'missing deaths'
     end
     # TODO tested no longer available
@@ -1121,10 +1120,10 @@ byebug
       @errors << 'missing positive and deaths'
     end
     s = @doc.css('body').text.gsub(',','')
-    if s =~ /Total individuals tested for COVID-19: ([0-9]+)[^0-9]/i
+    if s =~ /Total individuals tested for COVID-19 statewide[^\d]+([0-9]+)/i
       h[:tested] = string_to_i($1)
     else
-      @warnings << 'missing tested'
+      @errors << 'missing tested'
     end
     # counties in a nice table
     h
@@ -1138,11 +1137,11 @@ byebug
       @errors << 'map url not found'
       return h
     end
+puts @url
     crawl_page
-    sec = SEC/3
+    sec = SEC
     loop do
-      if @driver.page_source =~ /src=\"https:\/\/montana\.maps\.arcgis\.com\/apps\/opsdashboard([^"]+)"/
-        @url = 'https://montana.maps.arcgis.com/apps/opsdashboard' + $1
+      if @url = @driver.page_source.scan(/https:\/\/experience\.arcgis\.com\/[^'"]+/).first
         break
       elsif sec == 0
         @errors << 'map url2 not found'
@@ -1152,19 +1151,37 @@ byebug
       puts "sleeping...#{sec}"
       sleep 1
     end
+puts @url
     crawl_page
-    sec = SEC/3
+(1..1).to_a.each do |outer_loop|
+    sec = SEC
     loop do
-      @s = @driver.find_elements(class: 'layout-reference')[0].text rescue ''
+      if (@url = @driver.page_source.scan(/https:\/\/montana.maps.arcgis.com[^'"]+/).first) || 
+         (@url = @driver.page_source.scan(/https:\/\/experience\.arcgis\.com\/[^'"]+/).first)
+        break
+      elsif sec == 0
+        @errors << 'map url3 not found'
+        return h
+      end
+      sec -= 1
+      puts "sleeping...#{sec}"
+      sleep 1
+    end
+    puts @url
+    crawl_page
+end
+    sec = SEC/2
+    loop do
+      @s = @driver.find_elements(class: 'dashboard-page')[0].text
 # County is available
       flag = false
-      if @s =~ /Total Cases\n([^\n]+)\n/
+      if @s =~ /Total Confirmed Cases\n([^\n]+)\n/
         h[:positive] = string_to_i($1)
         sleep 2
       else
         flag = true
       end
-      if @s =~ /Total Number of Tests Completed [\/0-9]+[^\d]+([^\n]+)/
+      if @s =~ /Total Tests\n([^\n]+)\n/
         h[:tested] = string_to_i($1)
       else
         #flag = true
@@ -1242,19 +1259,19 @@ byebug
   end
 
   def parse_nd(h)
-    crawl_page
     if @auto_flag
       puts 'skipping ND'
       h[:skip] = true
       return h
     end
+    crawl_page
     puts "image file for ND"
-    h[:tested] = 6207
-    h[:positive] = 186
-    h[:negative] = 6021
-    h[:hospitalized] = 30
+    h[:tested] = 9608 # HARDCODE
+    h[:positive] = 278
+    h[:negative] = 9330
+    h[:hospitalized] = 36
     h[:pending] = 0
-    h[:deaths] = 3 # TODO manual
+    h[:deaths] = 6 # TODO manual
     pngs = @s.scan(/files\/documents\/Files\/MSS\/coronavirus[^'"]+/)
     i = 0
     for png in pngs
@@ -1272,7 +1289,7 @@ byebug
     if @s =~ /<strong>.Updated&#58\; <\/strong>([^<]+)</
       h[:date] = $1
     else
-      @errors << "missing date"
+      @warnings << "missing date"
     end
     if url = @driver.page_source.scan(/https:\/\/arcg.is[^'"]+/).first
     else
@@ -1442,7 +1459,7 @@ byebug
     if x = cols.map.with_index {|v,i| [v,i]}.select {|v,i| v=~/^Negative/}.first
       h[:negative] = string_to_i(x[0].split.last)
     else
-      @errors << 'missing negative'
+      @warnings << 'missing negative'
     end
     if x = cols.map.with_index {|v,i| [v,i]}.select {|v,i| v=~/Total Tests/}.first
       h[:tested] = string_to_i(x[0].split.last)
@@ -1467,7 +1484,7 @@ byebug
     end
     crawl_page
     @s = ''
-    sec = SEC * 3
+    sec = SEC / 3
     loop do
       puts "sleeping...#{sec}"
       sleep 1
@@ -1476,6 +1493,7 @@ byebug
         @errors << 'failed to load'
         return h
       end
+      @driver.find_elements(class: 'pbi-glyph-chevronleftmedium').first.click rescue nil
       x = @driver.find_elements(class: 'landingController')[0]
       @s = x.text.gsub(',','') if x
       flag = true
@@ -1502,13 +1520,15 @@ byebug
   end
 
   def parse_ny(h)
+    if @auto_flag
+      puts "skipping NY"
+      h[:skip] = true
+      return h
+    end
     crawl_page
-    byebug
-
-    url = 'https://covid19tracker.health.ny.gov/views/NYS-COVID19-Tracker/NYSDOHCOVID-19Tracker-Fatalies?%3Aembed=yes&%3Atoolbar=no&%3Atabs=n'
-    
-byebug unless @auto_flag
-return h
+    # url = 'https://covid19tracker.health.ny.gov/views/NYS-COVID19-Tracker/NYSDOHCOVID-19Tracker-Fatalies?%3Aembed=yes&%3Atoolbar=no&%3Atabs=n'
+    byebug unless @auto_flag
+    return h
 
 =begin
     rows = @doc.css('table')[0].text.gsub(',','').split("\n").map {|i| i.strip}.select {|i| i.size>0}
@@ -1559,7 +1579,7 @@ return h
     cols = []
     loop do
       begin
-        cols = @driver.find_elements(class: 'odh-ads__container')[0].text.split("\n").map {|i| i.strip}.select {|i| i.size > 0}
+        cols = @driver.find_elements(class: 'stats-cards__container')[0].text.split("\n").map {|i| i.strip}.select {|i| i.size > 0}
         break
       rescue => e
         if sec == 0
@@ -1576,9 +1596,13 @@ return h
     else
       @errors << 'missing positive'
     end
+    if x = cols.map.with_index {|v,i| [v,i]}.select {|v,i| v=~/^Total Deaths/}.first
+      h[:deaths] = string_to_i(cols[x[1]-1])
+    end
     if x = cols.map.with_index {|v,i| [v,i]}.select {|v,i| v=~/^Number of Deaths/}.first
       h[:deaths] = string_to_i(cols[x[1]-1])
-    else
+    end
+    unless h[:deaths]
       @errors << 'missing deaths'
     end
     if x = cols.map.with_index {|v,i| [v,i]}.select {|v,i| v=~/^Number of Hospitalizations in Ohio/}.first
@@ -1596,6 +1620,7 @@ return h
 
   def parse_ok(h)
     crawl_page
+    byebug unless @auto_flag
     #byebug
     cols = @doc.css('table').map {|i| i.text}.select {|i| i=~/Oklahoma Test Results/}.last.split("\n").select {|i| i.strip.size > 0}
     if x = cols.map.with_index {|v,i| [v,i]}.select {|v,i| v=~/Positive \(In-State\)/}.first
@@ -1627,7 +1652,7 @@ return h
     if x = cols.map.with_index {|v,i| [v,i]}.select {|v,i| v=~/^Hospitalized/}.first
       h[:hospitalized] = string_to_i(cols[x[1]+1])
     else
-      @errors << 'missing hospitalized'
+      @warnings << 'missing hospitalized'
     end
     h
   end  
@@ -1782,12 +1807,12 @@ return h
       sleep(1)
     end
     cols = @s.split("\n")
-    if (x = cols.select {|v,i| v=~/^Number of Rhode Island COVID-19 positive cases:/}.first)
+    if (x = cols.select {|v,i| v=~/^Number of Rhode Island COVID-19 positive cases/}.first)
       h[:positive] = string_to_i(x.strip.split.last)
     else
       @errors << 'missing pos'
     end
-    if (x = cols.select {|v,i| v=~/^Number of people who had negative test results/}.first)
+    if (x = cols.select {|v,i| v=~/^Number of people who have had negative test results/}.first)
       h[:negative] = string_to_i(x.strip.split.last)
     else
       @errors << 'missing neg'
@@ -1876,15 +1901,16 @@ return h
       h[:positive] = string_to_i($1)
       h[:negative] = string_to_i($2)
       h[:pending] = string_to_i($3)
+      h[:tested] = h[:positive] + h[:negative] + h[:pending]
     else
       @errors << "missing pos neg pending"
     end
     if (t = tables.select {|i| i=~/COVID-19 IN SOUTH DAKOTA/}[0]) &&
       #t =~ /Cases ([0-9]+) Deaths ([0-9]+) Recovered ([0-9]+)/
-      t =~ /Cases\s(\d+)\sHospitalized\s(\d+)\sDeaths\s(\d+)\sRecovered\s(\d+)\s/
-      h[:hospitalzed] = string_to_i($2)
-      h[:deaths] = string_to_i($3)
-      h[:recovered] = string_to_i($4)
+      t =~ /Deaths\s(\d+)\sRecovered\s(\d+)\s/
+      #h[:hospitalzed] = string_to_i($2)
+      h[:deaths] = string_to_i($1)
+      h[:recovered] = string_to_i($2)
     else
       @errors << "missing deaths"
     end
@@ -1901,6 +1927,7 @@ return h
       h[:negative] = string_to_i($2)
       h[:tested] = string_to_i($3)
     else     
+      byebug unless @auto_flag
       @errors << 'parse failed' 
     end
     s = @doc.css('table').map {|i| i.text.gsub(',','')}.select {|i| i=~/Fatalities/}.first
@@ -2026,7 +2053,7 @@ crawl_page
     if @s =~ /Last updated: ([^<]+)</
       h[:date] = $1.strip
     else
-      @errors << "missing date"
+      @warnings << "missing date"
     end
     cols = @doc.css('table')[0].text.split("\n").map {|i| i.strip}.select {|i| i.size > 0}
     if x = cols.map.with_index {|v,i| [v,i]}.select {|v,i| v=~/Positive test results/}.first
@@ -2241,7 +2268,7 @@ crawl_page
     crawl_page
     s = @driver.find_element(class: 'page').text
     #byebug
-    if s =~ /At this time there are ([^\s]+) reported cases/
+    if s =~ /At this time there are ([^\s]+) laboratory/
       h[:positive] = string_to_i($1)
     else
       @errors << "cases found"
@@ -2264,7 +2291,7 @@ crawl_page
     end
     url = 'https://health.wyo.gov/publichealth/infectious-disease-epidemiology-unit/disease/novel-coronavirus/covid-19-map-and-statistics/'
     crawl_page url
-puts 'death manual'
+    puts 'death manual'
     byebug unless @auto_flag
     h
   end
