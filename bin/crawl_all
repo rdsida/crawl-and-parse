@@ -3,7 +3,7 @@
 require './crawler'
 
 crawler = Crawler.new
-crawler.run(['ak', "az", 'id', 'ks', "nd", 'ny', 'wy'], false)
+crawler.run(['ak', 'ar', "az", 'ca', 'ct', 'ga', 'hi', 'ia', 'id', 'ks', 'ma', 'md', 'mi', "nd", 'ny', 'oh', 'ok', 'pr', 'ri', 'sd', 'tn', 'vt', 'wi', 'wv', 'wy'], false)
 
 errors = crawler.run
 

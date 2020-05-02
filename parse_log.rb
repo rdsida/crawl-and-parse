@@ -61,7 +61,9 @@ h_state.keys.sort.each do |_st|
 
     _tested = h_latest[:positive].to_i + h_latest[:negative].to_i + h_latest[:pending].to_i
     if _tested > h_latest[:tested].to_i
-      #puts "update tested #{h[:st]} #{_tested} #{h_latest[:tested]}"
+
+#byebug if h[:st]=='wa'
+#      puts "update tested #{h[:st]} #{_tested} #{h_latest[:tested]}"
       h_latest[:tested] = _tested
     end
 
