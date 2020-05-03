@@ -585,7 +585,6 @@ end
     s = @driver.find_element(id: 'main').text.gsub(',','')
     @s += "\nBREAK\n" + s
 
-    # @s += "\nBREAK\n" + s
     county_table = @driver.find_elements(class: 'col1-b')[0].text
     hospitalized_table = @driver.find_elements(class: 'col2-b')[0].text
     @driver.find_elements(class: 'more_link')[0].click
