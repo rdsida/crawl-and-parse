@@ -607,7 +607,10 @@ end
     @driver.navigate.to url
     s = @driver.page_source.gsub(',','')
     @s += "\nBREAK\n" + s
-    if @driver.find_elements(class: 'primary-content')[0].text.gsub(',','') =~ /Hawai.?i Totals\s\d+\s\d+\s(\d+)\s(\d+)/
+
+    if testing_table = @driver.find_elements(xpath: '//table/tbody').select { |t| t.text =~ /Total Number of Individuals Tested/ }.first
+      h[:tested] = testing_table.text.tr('*','').tr(',','').split("\n")[3].to_i
+    elsif @driver.find_elements(class: 'primary-content')[0].text.gsub(',','') =~ /Hawai.?i Totals\s\d+\s\d+\s(\d+)\s(\d+)/
       h[:tested] = string_to_i($2)
     else
       byebug unless @auto_flag
