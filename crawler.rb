@@ -915,7 +915,7 @@ end
     sec = SEC/3
     loop do
       @s = @driver.find_elements(class: 'markdown-card').map {|i| i.text.gsub(',','')}.select {|i| i=~/Number of confirmed deaths/}[0]
-      if @s =~ /Number of confirmed cases: (\d+)\nNumber of negative test results: (\d+)\nNumber of confirmed deaths: (\d+)/
+      if @s =~ /Number of confirmed cases : (\d+)\nNumber of negative test results : (\d+)\nNumber of confirmed deaths : (\d+)/
         h[:positive] = string_to_i($1)
         h[:negative] = string_to_i($2)
         h[:deaths] = string_to_i($3)
