@@ -553,41 +553,34 @@ byebug
 
   def parse_ga(h)
     crawl_page
-    unless url = @driver.page_source.scan(/https:\/\/[^'"]+\.cloudfront\.net[^'"]+/).first
-      @errors << 'missing url'
-      return h
-    end
-    crawl_page url
-    @s = @driver.find_element(class: 'not-embedded').text.gsub(',','')
-    if x = @s.scan(/No. Cases \(\%\)\nTotal ([0-9]+)/).first
-      h[:positive] = string_to_i(x[0])
+    @s = @driver.find_element(id: "KPI1").text
+    if @s =~ /Total Tests\*\n(.+)\n/
+      h[:tested] = string_to_i($1)
     else
-      @errors << 'missing positive'
+      @errors << "missing tests"
     end
-    if x = @s.scan(/Deaths ([0-9]+)/).first
-      h[:deaths] = string_to_i(x[0])
+    if @s =~ /Confirmed COVID-19 Cases\*\*\n(.+)\n/
+      h[:positive] = string_to_i($1)
     else
-      @errors << 'missing deaths'
+      @errors << "missing positive"
     end
-    if x = @s.scan(/Total Tests\nCommercial Lab [0-9]+ ([0-9]+)\nGphl [0-9]+ ([0-9]+)/).first
-      h[:tested] = string_to_i(x[0]) + string_to_i(x[1])
+    if @s =~ /\nDeaths\*\*\n(.+)/
+      h[:deaths] = string_to_i($1)
     else
-      @errors << 'missing tested'
+      @errors << "missing deaths"
     end
-    cols = @s.split("\n")
-    if x = cols.map.with_index {|v,i| [v,i]}.select {|v,i| v=~/COVID-19 Confirmed Cases By County: No. Cases No. Deaths/}.first
-      i = x[1]+1
-      h[:counties] = []
-      while !(cols[i] =~ /^Unknown/) && cols[i] =~ /^(.*) ([\d]+) ([\d]+)$/
-        h_county = {}
-        h_county[:name] = $1.strip
-        h_county[:positive] = string_to_i($2)
-        h_county[:deaths] = string_to_i($3)
-        h[:counties] << h_county
-        i += 1
-      end
-    else
-      @errors << 'missing counties'
+    # add counties
+    h[:counties] = []
+    rows  = @driver.find_elements(class: "MuiTableRow-root").map{|i| i.text}
+    indexes = rows.first.split("\n").each_with_index.select{|x,i| ["County", "Confirmed Cases", "Total Deaths"].include? x}.to_h
+    # returns {"County" => 0, "Confirmed Cases" => 1 , "Total Deaths" => 3}
+    rows.each do |county|
+      county_arr = county.split(" ")
+      h_county = {}
+      h_county[:name] = county_arr[indexes["County"]]
+      h_county[:positive] = county_arr[indexes["Confirmed Cases"]].to_i
+      h_county[:deaths] = county_arr[indexes["Total Deaths"]].to_i
+      h[:counties] << h_county
     end
     h
   end
