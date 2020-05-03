@@ -6,8 +6,9 @@ require 'humanize'
 
 # not automatic:
 # ['ak', "az", 'id', 'ks', 'mi', 'oh', "nd", 'ny', 'tn', 'wy']
-# ak and nd have images
-# az is csv download
+# ak have images
+# with tableau iframe (ocr needed): az ca va ia ks ny wy
+# with pdfs: ct
 
 # counties with death done: mi, wa, pa
 # counties done without death: ny, nj, ma, ct(towns)broken
@@ -326,12 +327,12 @@ byebug
   def parse_co(h)
     crawl_page
 
-    s = @driver.find_elements(class: 'paragraph__column--container-wrapper').map {|i| i.text.gsub(',','')}.select {|i| i=~/People tested/}[0]
+    s = @driver.find_elements(class: 'paragraph__column').map {|i| i.text.gsub(',','')}.select {|i| i=~/People tested/}[0]
     if s && s =~ /(\d+)\sCases/
       h[:positive] = string_to_i($1)
       if s && s =~ /(\d+)\sPeople tested/
         h[:tested] = string_to_i($1)
-        if s && s =~ /(\d+)\sDeaths/
+        if s && s =~ /\n(\d+)\*\nDeaths\n/
           h[:deaths] = string_to_i($1)
         else
           @errors << 'missing deaths'
@@ -474,108 +475,112 @@ byebug
 
   def parse_fl(h)
     crawl_page
-    cols = (s=@driver.find_elements(class: "situation__boxes-wrapper")[0].text).gsub(',','').split("\n").map {|i| i.strip}.select {|i| i.size>0}
-    @s += "\nBREAK\n" + s
-    s = @driver.find_elements(class: "inner--box").map {|i| i.text}.select {|i| i=~/\nDeaths/}.last
-    @s += "\nBREAK\n" + s
-if false
-    if pdf_url = @driver.page_source.scan(/https:\/\/[^'"]+covid-19-data---daily-report[^'"]+/).first
-      `curl #{pdf_url} -o #{@path}#{@st}/#{@filetime}_1.pdf`
-    else
-      @errors << 'missing pdf'
-    end
-end
-    if @driver.page_source =~ /"([^"]+)arcgis\.com([^"]+)"/
-      url = $1 + 'arcgis.com' + $2
-      crawl_page url
-      sec = SEC/8
-      url = nil
-      loop do
-        if @driver.page_source =~ /https:\/\/arcg.is([^"]+)"/
-          url = 'https://arcg.is' + $1
-          break
-        else
-          sec -= 1
-          puts "sleeping1...#{sec}"
-          sleep 1
-          if sec == 0
-            @errors << '2nd dash link not found'
-            break
-          end
+    sec = SEC/5
+    loop do
+     stats = {tested: "tested-total-stat", positive: "total-cases-stat", deaths: "deaths-stat"}
+     stats.each do |k, v|
+        begin
+          h[k] = @driver.find_element(id: v).text.gsub(",", "").to_i
+          puts k.to_s
+          puts h[k]
+        rescue
+          @errors << "#{k.to_s} missing"
+          byebug unless @auto_flag
         end
       end
-      if url
-        crawl_page url
-        sec = SEC/8
-        loop do
-          begin
-            @driver.find_elements(class: 'tab-title').select {|i| i.text =~ /Testing/}[0].click
-            s = @driver.find_elements(class: 'dashboard-page')[0].text
-            if s =~ /\nTotal Tests\n([^\n]+)\n/
-              h[:tested] = string_to_i($1)
-              if s.gsub(',','') =~ /\nTotal Cases\s(\d+)/
-                h[:positive] = string_to_i($1)
-                if s.gsub(',','') =~ /\nDeaths\s(\d+)/
-                  h[:deaths] = string_to_i($1)
-                  @s += "\nBREAK\n" + s
-                  break
-                end
-              end
-            end
-          rescue
-          end
-          if sec == 0
-            @errors << 'parse failed'
-            break
-          end
-          sec -= 1
-          puts "sleeping2...#{sec}"
-          sleep 1
-        end
+     break if stats.map{|k, v| h[k]}.all?{|i| i.class == Integer && i > 0} # break loop if all stats are present
+      if sec == 0
+        @errors << 'parse failed'
+        break
       end
-    else
-      @errors << 'dashboard not found'
-    end
+      sec -= 1
+      puts "sleeping...#{sec}"
+      sleep 1
+    end # loop
+    # if @driver.page_source =~ /"([^"]+)arcgis\.com([^"]+)"/
+    #   url = $1 + 'arcgis.com' + $2
+    #   crawl_page url
+    #   sec = SEC/8
+    #   url = nil
+    #   loop do
+    #     if @driver.page_source =~ /https:\/\/arcg.is([^"]+)"/
+    #       url = 'https://arcg.is' + $1
+    #       break
+    #     else
+    #       sec -= 1
+    #       puts "sleeping1...#{sec}"
+    #       sleep 1
+    #       if sec == 0
+    #         @errors << '2nd dash link not found'
+    #         break
+    #       end
+    #     end
+    #   end
+    #   if url
+    #     crawl_page url
+    #     sec = SEC/8
+    #     loop do
+    #       begin
+    #         @driver.find_elements(class: 'tab-title').select {|i| i.text =~ /Testing/}[0].click
+    #         s = @driver.find_elements(class: 'dashboard-page')[0].text
+    #         if s =~ /\nTotal Tests\n([^\n]+)\n/
+    #           h[:tested] = string_to_i($1)
+    #           if s.gsub(',','') =~ /\nTotal Cases\s(\d+)/
+    #             h[:positive] = string_to_i($1)
+    #             if s.gsub(',','') =~ /\nDeaths\s(\d+)/
+    #               h[:deaths] = string_to_i($1)
+    #               @s += "\nBREAK\n" + s
+    #               break
+    #             end
+    #           end
+    #         end
+    #       rescue
+    #       end
+    #       if sec == 0
+    #         @errors << 'parse failed'
+    #         break
+    #       end
+    #       sec -= 1
+    #       puts "sleeping2...#{sec}"
+    #       sleep 1
+    #     end
+    #   end
+    # else
+    #   @errors << 'dashboard not found'
+    # end
     h
   end
 
   def parse_ga(h)
     crawl_page
-    unless url = @driver.page_source.scan(/https:\/\/[^'"]+\.cloudfront\.net[^'"]+/).first
-      @errors << 'missing url'
-      return h
-    end
-    crawl_page url
-    @s = @driver.find_element(class: 'not-embedded').text.gsub(',','')
-    if x = @s.scan(/No. Cases \(\%\)\nTotal ([0-9]+)/).first
-      h[:positive] = string_to_i(x[0])
+    @s = @driver.find_element(id: "KPI1").text
+    if @s =~ /Total Tests\*\n(.+)\n/
+      h[:tested] = string_to_i($1)
     else
-      @errors << 'missing positive'
+      @errors << "missing tests"
     end
-    if x = @s.scan(/Deaths ([0-9]+)/).first
-      h[:deaths] = string_to_i(x[0])
+    if @s =~ /Confirmed COVID-19 Cases\*\*\n(.+)\n/
+      h[:positive] = string_to_i($1)
     else
-      @errors << 'missing deaths'
+      @errors << "missing positive"
     end
-    if x = @s.scan(/Total Tests\nCommercial Lab [0-9]+ ([0-9]+)\nGphl [0-9]+ ([0-9]+)/).first
-      h[:tested] = string_to_i(x[0]) + string_to_i(x[1])
+    if @s =~ /\nDeaths\*\*\n(.+)/
+      h[:deaths] = string_to_i($1)
     else
-      @errors << 'missing tested'
+      @errors << "missing deaths"
     end
-    cols = @s.split("\n")
-    if x = cols.map.with_index {|v,i| [v,i]}.select {|v,i| v=~/COVID-19 Confirmed Cases By County: No. Cases No. Deaths/}.first
-      i = x[1]+1
-      h[:counties] = []
-      while !(cols[i] =~ /^Unknown/) && cols[i] =~ /^(.*) ([\d]+) ([\d]+)$/
-        h_county = {}
-        h_county[:name] = $1.strip
-        h_county[:positive] = string_to_i($2)
-        h_county[:deaths] = string_to_i($3)
-        h[:counties] << h_county
-        i += 1
-      end
-    else
-      @errors << 'missing counties'
+    # add counties
+    h[:counties] = []
+    rows  = @driver.find_elements(class: "MuiTableRow-root").map{|i| i.text}
+    indexes = rows.first.split("\n").each_with_index.select{|x,i| ["County", "Confirmed Cases", "Total Deaths"].include? x}.to_h
+    # returns {"County" => 0, "Confirmed Cases" => 1 , "Total Deaths" => 3}
+    rows.each do |county|
+      county_arr = county.split(" ")
+      h_county = {}
+      h_county[:name] = county_arr[indexes["County"]]
+      h_county[:positive] = county_arr[indexes["Confirmed Cases"]].to_i
+      h_county[:deaths] = county_arr[indexes["Total Deaths"]].to_i
+      h[:counties] << h_county
     end
     h
   end
@@ -1300,28 +1305,19 @@ byebug
   end
 
   def parse_nd(h)
-    if @auto_flag
-      puts 'skipping ND'
-      h[:skip] = true
-      return h
-    end
     crawl_page
-    puts "image file for ND"
-    h[:tested] = 11317# HARDCODE
-    h[:positive] = 365
-    h[:negative] = 10952
-    h[:hospitalized] = 44
-    h[:pending] = 0
-    h[:deaths] = 9  # TODO manual
-    pngs = @s.scan(/files\/documents\/Files\/MSS\/coronavirus[^'"]+/)
-    i = 0
-    for png in pngs
-      i += 1
-      url = 'https://www.health.nd.gov/sites/www/' + png
-      `curl #{url} -o #{@path}#{@st}/#{@filetime}_#{i}.png`
+    stats = {positive: /(.+)\nPositive Cases/, tested: /(.+)\nTotal Tested/, deaths: /(.+)\nDeaths/, hospitalized: /(.+)\nTotal Hospitalized/}
+    circles = @driver.find_elements(class: "circle").map{|c| c.text}
+    circles.each do |c|
+      stats.each do |k, v|
+        if c =~ v
+          h[k] = string_to_i($1)
+        end
+      end #stat
+    end #circle
+    stats.keys.reject{|i| i == :hospitalized }.each do |stat|
+      @errors << "missing #{stat.to_s}" unless h[stat]
     end
-    puts 'manual entry from image'
-    byebug 
     h
   end  
 
