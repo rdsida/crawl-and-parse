@@ -1278,28 +1278,19 @@ byebug
   end
 
   def parse_nd(h)
-    if @auto_flag
-      puts 'skipping ND'
-      h[:skip] = true
-      return h
-    end
     crawl_page
-    puts "image file for ND"
-    h[:tested] = 11317# HARDCODE
-    h[:positive] = 365
-    h[:negative] = 10952
-    h[:hospitalized] = 44
-    h[:pending] = 0
-    h[:deaths] = 9  # TODO manual
-    pngs = @s.scan(/files\/documents\/Files\/MSS\/coronavirus[^'"]+/)
-    i = 0
-    for png in pngs
-      i += 1
-      url = 'https://www.health.nd.gov/sites/www/' + png
-      `curl #{url} -o #{@path}#{@st}/#{@filetime}_#{i}.png`
+    stats = {positive: /(.+)\nPositive Cases/, tested: /(.+)\nTotal Tested/, deaths: /(.+)\nDeaths/, hospitalized: /(.+)\nTotal Hospitalized/}
+    circles = @driver.find_elements(class: "circle").map{|c| c.text}
+    circles.each do |c|
+      stats.each do |k, v|
+        if c =~ v
+          h[k] = string_to_i($1)
+        end
+      end #stat
+    end #circle
+    stats.keys.reject{|i| i == :hospitalized }.each do |stat|
+      @errors << "missing #{stat.to_s}" unless h[stat]
     end
-    puts 'manual entry from image'
-    byebug 
     h
   end  
 
