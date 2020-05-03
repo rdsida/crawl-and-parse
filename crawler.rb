@@ -6,8 +6,9 @@ require 'humanize'
 
 # not automatic:
 # ['ak', "az", 'id', 'ks', 'mi', 'oh', "nd", 'ny', 'tn', 'wy']
-# ak and nd have images
-# az is csv download
+# ak have images
+# with tableau iframe (ocr needed): az ca va ia ks ny wy
+# with pdfs: ct
 
 # counties with death done: mi, wa, pa
 # counties done without death: ny, nj, ma, ct(towns)broken
