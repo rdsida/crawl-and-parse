@@ -807,28 +807,29 @@ end
       @errors << 'link failed'
       return h
     end
-    sec = SEC/2
+    sec = SEC/3
     loop do
       sec -= 1
       puts "sleeping...#{sec}"
       sleep 1
-if sec <=0
-@errors << 'failed'
-break
-end
+      if sec <=0
+        @errors << 'failed'
+        break
+      end
       begin
         @s = @driver.find_elements(class: 'layout-reference')[0].text.gsub(',','')
       rescue
         @s = ''
       end
-      if @s =~ /\nData updated:([^\n]+)\n/
+      if @s =~ /Data updated: ([^\n ]+)/
+      
         h[:date] = $1.strip
       end
       if @s =~ /\n(\d+)\nCases Reported/
         h[:positive] = string_to_i($1)
         if @s =~ /\nDeaths Reported\n(\d+)/
           h[:deaths] = string_to_i($1)
-          if @s =~ /\nCommercial Tests Completed\n(\d+)/
+          if @s =~ /\nCommercial Tests\n(\d+)/
             h[:tested] = string_to_i($1)
             if @s =~ /(\d+)\nby State Lab/
               h[:tested] += string_to_i($1)
@@ -914,7 +915,7 @@ end
     sec = SEC/3
     loop do
       @s = @driver.find_elements(class: 'markdown-card').map {|i| i.text.gsub(',','')}.select {|i| i=~/Number of confirmed deaths/}[0]
-      if @s =~ /Number of confirmed cases: (\d+)\nNumber of negative test results: (\d+)\nNumber of confirmed deaths: (\d+)/
+      if @s =~ /Number of confirmed cases : (\d+)\nNumber of negative test results : (\d+)\nNumber of confirmed deaths : (\d+)/
         h[:positive] = string_to_i($1)
         h[:negative] = string_to_i($2)
         h[:deaths] = string_to_i($3)
