@@ -2281,7 +2281,7 @@ byebug
 
   def parse_wv(h)
     crawl_page
-    sec = SEC/5
+    sec = SEC/3
     url = ''
     loop do
       url = @driver.page_source.scan(/https:[^'"]+powerbigov.us[^'"]+/).first
@@ -2296,18 +2296,16 @@ byebug
     end
     crawl_page url
     sec = SEC/2
+    sleep 6
     loop do
-      @s = @driver.find_element(class: 'landingController').text rescue nil
-      if @s && @s.gsub(',','') =~ /Reported to\s?WVDHHR\n(\d+)\n/
-        h[:tested] = $1.to_i
-        if @s.gsub(',','') =~ /Resident Positive Cases\n(\d+)\n/
-          h[:positive] = $1.to_i
-          if @s.gsub(',','') =~ /Resident Deaths\n(\d+)/
-            h[:deaths] = $1.to_i
-            break
-          end
-        end    
+      cards = @driver.find_elements(class: "card").map{|c| string_to_i c.text}
+      cards_indexes = {tested: 3, positive: 2, deaths: 0}
+      cards_indexes.each do |k, v|
+        h[k] = cards[v]
+        @errors << "#{k.to_s} missing" unless h[k] && h[k] > 0
       end
+      data_parsed = h.select{|k, v| [:tested, :positive, :deaths].include? k}.values.all?{|v| v.class == Integer && v > 0}
+      break if data_parsed
       sec -= 1
       if sec == 0
         @errors << 'missing url'
