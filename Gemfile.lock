@@ -25,6 +25,7 @@ GEM
       hashery (~> 2.0)
       ruby-rc4
       ttfunk
+    rtesseract (3.1.1)
     ruby-rc4 (0.1.5)
     rubyzip (2.3.0)
     selenium-webdriver (3.142.7)
@@ -43,6 +44,7 @@ DEPENDENCIES
   humanize
   nokogiri (~> 1.10)
   pdf-reader (~> 2.4)
+  rtesseract
   selenium-webdriver (~> 3.142)
 
 BUNDLED WITH
