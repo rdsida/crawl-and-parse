@@ -274,26 +274,7 @@ byebug
   end
 
   def parse_co(h)
-    crawl_page
-
-    s = @driver.find_elements(class: 'paragraph__column').map {|i| i.text.gsub(',','')}.select {|i| i=~/People tested/}[0]
-    if s && s =~ /(\d+)\sCases/
-      h[:positive] = string_to_i($1)
-      if s && s =~ /(\d+)\sPeople tested/
-        h[:tested] = string_to_i($1)
-        if s && s =~ /\n(\d+)\*\nDeaths\n/
-          h[:deaths] = string_to_i($1)
-        else
-          @errors << 'missing deaths'
-        end
-      else
-        @errors << 'missing tested'
-      end
-    else
-      @errors << "parse failed"
-    end
-    # counties available
-    h
+    CoCrawler.new(driver: @driver, url: @url, st: @st).call
   end
 
   # TODO death number is words
