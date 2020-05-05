@@ -4,6 +4,7 @@ require './crawlers/base_crawler.rb'
 
 class TnCrawler < BaseCrawler
   def call
+    @results[:st] = 'tn'
     _find_positive
     _find_tested
     _find_deaths

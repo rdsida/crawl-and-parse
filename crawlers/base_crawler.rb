@@ -7,7 +7,8 @@ class BaseCrawler
     @driver.navigate.to(@url)
     @results = {
       source_urls: [@url],
-      counties: []
+      counties: [],
+      ts: Time.now
     }
   end
 end
