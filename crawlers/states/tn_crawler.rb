@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require './crawlers/base_crawler.rb'
-
 class TnCrawler < BaseCrawler
 
   protected

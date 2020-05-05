@@ -9,6 +9,7 @@ require 'rtesseract'
 
 # Holds functionality common to all crawlers
 class BaseCrawler
+  include Utils
   def initialize(driver:, url: @url, st: @st)
     @driver     = driver
     @url        = url
@@ -25,6 +26,7 @@ class BaseCrawler
     rescue
       @errors << "crawler failed for #{@st}: #{e.inspect}"
     end
+
     @results = {
       source_urls: [@url],
       counties: [],
