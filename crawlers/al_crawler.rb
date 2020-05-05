@@ -4,6 +4,8 @@ require_relative 'base_crawler'
 
 class AlCrawler < BaseCrawler
 
+  protected
+
   def _set_up_page
     url = wait.until {
       @driver.page_source[/[^'"]+alpublichealth.maps.arcgis.com[^'"]+/]
