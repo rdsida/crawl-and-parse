@@ -516,66 +516,7 @@ byebug
   end
 
   def parse_hi(h)
-    crawl_page
-    s = @driver.find_element(id: 'main').text.gsub(',','')
-    @s += "\nBREAK\n" + s
-
-    county_table = @driver.find_elements(class: 'col1-b')[0].text
-    hospitalized_table = @driver.find_elements(class: 'col2-b')[0].text
-    @driver.find_elements(class: 'more_link')[0].click
-    county_tables = @driver.find_elements(class: 'wp-block-table').map(&:text).select { |t| t =~ /^\w*\sCOUNTY/ }
-    @driver.navigate.to 'https://health.hawaii.gov/news/covid-19-updates/'
-    url = @driver.page_source.scan(/https:\/\/[^'"]+daily-news-digest-[^'"]+/)[0]
-    @driver.navigate.to url
-    testing_table = @driver.find_elements(xpath: '//table/tbody').select { |t| t.text =~ /Total Number of Individuals Tested/ }.first
-
-    if county_table && (total_cases = /Total cases:\n([\d]+)/.match(county_table)[1].to_i)
-      h[:positive] = total_cases
-    else
-      @errors << 'missing positive'
-    end
-
-    if (deaths = /Hawaii deaths:\n([\d]+)/.match(hospitalized_table)[1].to_i)
-      h[:deaths] = deaths
-    else
-      @errors << 'missing deaths'
-    end
-
-    if testing_table
-      h[:tested] = testing_table.text.tr('*','').tr(',','').split("\n")[3].to_i
-    elsif @driver.find_elements(class: 'primary-content')[0].text.gsub(',','') =~ /Hawai.?i Totals\s\d+\s\d+\s(\d+)\s(\d+)/
-      h[:tested] = string_to_i($2)
-    else
-      byebug unless @auto_flag
-      @warnings << 'missing tested'
-    end
-
-    #counties
-
-    h[:counties] = [
-      {
-        name: "Hawai'i County",
-        positive: /Hawai.?i County:\n([\d]+)/.match(county_table)[1].to_i,
-        deaths: county_tables.select { |t| t =~ /HAWAII COUNTY/ }[0].match(/Deaths (\d+)/)[1].to_i,
-      },
-      {
-        name: "Honolulu County",
-        positive: /Honolulu County:\n([\d]+)/.match(county_table)[1].to_i,
-        deaths: county_tables.select { |t| t =~ /HONOLULU COUNTY/ }[0].match(/Deaths (\d+)/)[1].to_i,
-      },
-      {
-        name: "Kaua'i County",
-        positive: /Kaua.?i County:\n([\d]+)/.match(county_table)[1].to_i,
-        deaths: county_tables.select { |t| t =~ /KAUAI COUNTY/ }[0].match(/Deaths (\d+)/)[1].to_i,
-      },
-      {
-        name: "Maui County",
-        positive: /Maui County:\n([\d]+)/.match(county_table)[1].to_i,
-        deaths: county_tables.select { |t| t =~ /MAUI COUNTY/ }[0].match(/Deaths (\d+)/)[1].to_i,
-      },
-    ]
-
-    h
+    HiCrawler.new(driver: @driver, url: @url).call
   end
 
   def parse_ia(h)
