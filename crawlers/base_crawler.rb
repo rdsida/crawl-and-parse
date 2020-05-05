@@ -2,11 +2,11 @@
 
 class BaseCrawler
   def initialize(driver:, url: @url, st: @st)
-    @driver = driver
-    @url = url
-    @st = st
-    @path = 'data/'
-    @filetime = Time.now.to_s[0..18].gsub(' ', '-').gsub(':', '.')
+    @driver     = driver
+    @url        = url
+    @st         = st
+    @path       = 'data/'
+    @filetime   = Time.now.to_s[0..18].gsub(' ', '-').gsub(':', '.')
     @page_count = 0
     begin
       @driver.navigate.to(@url)

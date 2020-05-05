@@ -67,31 +67,7 @@ class Crawler
   end
 
   def parse_al(h)
-    crawl_page
-    url = @s.scan( /[^'"]+alpublichealth.maps.arcgis.com[^'"]+/ )[0]
-    raise unless url
-    crawl_page url
-    sec = SEC/3
-    loop do
-      t = @driver.find_elements(class: 'dashboard-page')[0]
-      (s=t.text.gsub(',','')) if t
-      if t && s =~ /CONFIRMED CASES\n(\d+)\nTOTAL TESTED\n(\d+)\nCOVID-19 DEATHS\n(\d+)\n/
-        h[:tested] = string_to_i($2)
-    	h[:deaths] = string_to_i($3) # switched
-        h[:positive] = string_to_i($1)
-        @s += "\nBREAK\n" + s
-        break
-      end
-      sec -= 1
-      if sec == 0
-        @errors << 'parse failed'
-        break
-      end
-      puts "sleeping...#{sec}"
-      sleep 1
-    end
-    # counties available
-    h
+    AlCrawler.new(driver: @driver, url: @url, st: @st).call
   end
 
   def parse_ar(h)
