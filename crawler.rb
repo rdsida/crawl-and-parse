@@ -63,7 +63,7 @@ class Crawler
   # parse_XXX methods for the 50 US states and DC
 
   def parse_ak(h)
-    AkCrawler.new(driver: @driver, url: @url).call
+    AkCrawler.new(driver: @driver, url: @url, st: @st).call
   end
 
   def parse_al(h)
@@ -261,6 +261,7 @@ byebug
   end
 
   def parse_ca(h)
+    #CaCrawler.new(driver: @driver, url: @url, st: @st).call
     crawl_page
     sec = SEC/5
     loop do
@@ -1935,7 +1936,7 @@ byebug
   end  
 
   def parse_tn(h)
-    TnCrawler.new(driver: @driver, url: @url).call
+    TnCrawler.new(driver: @driver, url: @url, st: @st).call
   end
 
   def parse_tx(h)

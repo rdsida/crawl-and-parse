@@ -3,17 +3,6 @@
 require_relative 'base_crawler'
 
 class AkCrawler < BaseCrawler
-  def call
-    @results[:st] = 'ak'
-    _set_up_page
-    _find_positive
-    _find_tested
-    _find_deaths
-    _find_recovered
-    _find_hospitalized
-
-    @results
-  end
 
   protected
 
