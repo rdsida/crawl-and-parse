@@ -3,6 +3,9 @@ require 'nokogiri'
 require 'selenium-webdriver'
 require 'pdf-reader'
 require 'humanize'
+require 'rtesseract'
+
+Dir["./crawlers/*.rb"].each { |file| require file }
 
 # not automatic:
 # ['ak', "az", 'id', 'ks', 'mi', 'oh', "nd", 'ny', 'tn', 'wy']
@@ -1963,36 +1966,7 @@ byebug
   end  
 
   def parse_tn(h)
-
-    if @auto_flag
-      puts "skipping TN"
-      h[:skip] = true
-    end
-
-    `rm ~/Downloads/TDH-2019-Novel-Coronavirus-Epi-and-Surveillance.pdf`
-    crawl_page
-=begin
-    s = @doc.css('table')[0].text.gsub(',','')
-    if s =~ /Laboratory Type\n\nPositive Test\n\nNegative Tests\n\nTotal/ &&
-      s =~ /\nTotal\n\n([0-9]+)\n\n([0-9]+)\n\n([0-9]+)/
-      h[:positive] = string_to_i($1)
-      h[:negative] = string_to_i($2)
-      h[:tested] = string_to_i($3)
-    else     
-      byebug unless @auto_flag
-      @errors << 'parse failed' 
-    end
-    s = @doc.css('table').map {|i| i.text.gsub(',','')}.select {|i| i=~/Fatalities/}.first
-    if s =~ /Fatalities\n([0-9]+)/
-      h[:deaths] = string_to_i($1)
-    else
-      @errors << 'missing deaths'
-    end
-=end
-    `open ~/Downloads/TDH-2019-Novel-Coronavirus-Epi-and-Surveillance.pdf` unless @auto_flag
-    byebug unless @auto_flag
-    `mv ~/Downloads/TDH-2019-Novel-Coronavirus-Epi-and-Surveillance.pdf #{@path}#{@st}/#{@filetime}_1.pdf`
-    h
+    TnCrawler.new(driver: @driver, url: @url).call
   end
 
   def parse_tx(h)
