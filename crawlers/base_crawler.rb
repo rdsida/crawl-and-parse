@@ -11,4 +11,8 @@ class BaseCrawler
       ts: Time.now
     }
   end
+
+  def wait
+    Selenium::WebDriver::Wait.new(timeout: 60)
+  end 
 end

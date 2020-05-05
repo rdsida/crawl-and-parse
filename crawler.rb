@@ -63,38 +63,7 @@ class Crawler
   # parse_XXX methods for the 50 US states and DC
 
   def parse_ak(h)
-    crawl_page
-    url = @driver.page_source.scan(/https[^'"]+arcgis\.com\/apps\/opsdashboard[^'"]+/)[0]
-    crawl_page url
-    sec = SEC/6
-    loop do
-      @s = @driver.find_element(class: 'claro').text.gsub(',','')
-      if @s =~ /\nTotal Cases\n(\d+)\n/
-        h[:positive] = $1.to_i
-        if @s =~ /\nDeaths\n(\d+)\n/
-          h[:deaths] = $1.to_i
-          break
-        end
-      end
-      sec -= 1
-      if sec == 0
-        @errors << 'parse failed'
-        return h
-      end
-      puts "sleeping: #{sec}"
-      sleep 1
-    end
-
-    puts 'AK: tested data in image?'
-    if @auto_flag
-      @warnings << 'tested was not manually entered'
-    else
-      byebug 
-    end
-    # Cumulative number of cases hospitalized to date:  0
-    # positive by region available
-    # TODO TESTED manual
-    h
+    AkCrawler.new(driver: @driver, url: @url).call
   end
 
   def parse_al(h)
