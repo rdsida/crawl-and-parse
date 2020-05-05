@@ -5,10 +5,15 @@ class BaseCrawler
     @driver = driver
     @url = url
     @driver.navigate.to(@url)
+    @page_count = 0
     @results = {
       source_urls: [@url],
       counties: [],
       ts: Time.now
     }
   end
+
+  def wait
+    Selenium::WebDriver::Wait.new(timeout: 60)
+  end 
 end
