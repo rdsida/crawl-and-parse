@@ -5,7 +5,18 @@ class BaseCrawler
     @driver = driver
     @url = url
     @st = st
-    @driver.navigate.to(@url)
+    @path = 'data/'
+    @filetime = Time.now.to_s[0..18].gsub(' ', '-').gsub(':', '.')
+    @page_count = 0
+    begin
+      @driver.navigate.to(@url)
+      open("#{@path}#{@st}/#{@filetime}_#{@page_count+=1}", 'w') do |f|
+        f.puts url
+        f.puts @driver.page_source
+      end
+    rescue
+      @errors << "crawler failed for #{@st}: #{e.inspect}"
+    end
     @results = {
       source_urls: [@url],
       counties: [],
@@ -31,8 +42,15 @@ class BaseCrawler
 
   def crawl_page(url)
     @results[:source_urls] << url
-    @driver.navigate.to(url)
-    
+    begin
+      @driver.navigate.to(url)
+      open("#{@path}#{@st}/#{@filetime}_#{@page_count+=1}", 'w') do |f|
+        f.puts url
+        f.puts @driver.page_source
+      end
+    rescue
+      @errors << "crawler failed for #{@st}: #{e.inspect}"
+    end
   end
 
   protected
