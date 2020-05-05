@@ -1,11 +1,5 @@
-require 'byebug'
-require 'nokogiri'
-require 'selenium-webdriver'
-require 'pdf-reader'
-require 'humanize'
-require 'rtesseract'
-
-Dir["./crawlers/*.rb"].each { |file| require file }
+require_relative './crawlers/base_crawler'
+Dir["./crawlers/states/*.rb"].sort.each { |file| require file }
 
 # not automatic:
 # ['ak', "az", 'id', 'ks', 'mi', 'oh', "nd", 'ny', 'tn', 'wy']

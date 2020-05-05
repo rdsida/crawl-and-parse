@@ -1,5 +1,13 @@
 # frozen_string_literal: true
 
+require 'byebug'
+require 'nokogiri'
+require 'selenium-webdriver'
+require 'pdf-reader'
+require 'humanize'
+require 'rtesseract'
+
+# Holds functionality common to all crawlers
 class BaseCrawler
   def initialize(driver:, url: @url, st: @st)
     @driver     = driver
