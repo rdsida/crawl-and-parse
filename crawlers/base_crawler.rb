@@ -54,6 +54,16 @@ class BaseCrawler
     _find_counties
     _find_towns
 
+    if !@results[:tested] && !@results[:negative]
+      @errors << 'missing tested or negative'
+    end
+    if !@results[:positive]
+      @errors << 'missing positive'
+    end
+    if !@results[:deaths]
+      @errors << 'missing deaths'
+    end
+    @results[:errors] = @errors
     @results
   end
 
