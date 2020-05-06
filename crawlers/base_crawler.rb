@@ -9,6 +9,7 @@ require 'rtesseract'
 
 # Holds functionality common to all crawlers
 class BaseCrawler
+  attr_accessor :errors, :results
   include Utils
   def initialize(driver:, url: @url, st: @st)
     @driver     = driver
@@ -17,13 +18,14 @@ class BaseCrawler
     @path       = 'data/'
     @filetime   = Time.now.to_s[0..18].gsub(' ', '-').gsub(':', '.')
     @page_count = 0
+    @errors = []
     begin
       @driver.navigate.to(@url)
       open("#{@path}#{@st}/#{@filetime}_#{@page_count+=1}", 'w') do |f|
         f.puts url
         f.puts @driver.page_source
       end
-    rescue
+    rescue StandardError => e
       @errors << "crawler failed for #{@st}: #{e.inspect}"
     end
 
