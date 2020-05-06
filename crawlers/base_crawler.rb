@@ -27,11 +27,18 @@ class BaseCrawler
       @errors << "crawler failed for #{@st}: #{e.inspect}"
     end
 
-    @results = {
+    @results = results_init
+  end
+
+  # This needed to be extracted to its own method, because the old monolithic
+  # crawler inherits from this class but overrides the initialize method.
+  # Once all crawlers are extracted into their own classes, we can put it back.
+  def results_init
+    {
       source_urls: [@url],
       counties: [],
       ts: Time.now,
-      st: st
+      st: @st
     }
   end
 
@@ -52,7 +59,7 @@ class BaseCrawler
     Selenium::WebDriver::Wait.new(timeout: 60)
   end
 
-  def crawl_page(url)
+  def crawl_page(url = @url)
     @results[:source_urls] << url
     begin
       @driver.navigate.to(url)
