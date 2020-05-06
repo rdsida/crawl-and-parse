@@ -691,64 +691,7 @@ byebug
   end
 
   def parse_ma(h)
-    crawl_page
-    sec = SEC/3
-    loop do
-      @s = @driver.find_elements(class: 'page-content')[0].text
-      if @s =~ /\nConfirmed cases of COVID-19 ([^\n]+)\n/
-        h[:positive] = string_to_i($1)
-        break
-      elsif sec == 0
-        @errors << 'missing positive'
-        break
-      end
-      sec -= 1
-      puts "sleeping...#{sec}"
-      sleep 1
-    end
-    puts "pdf? manual entry of tested from pdf"
-    if @driver.page_source =~ /([^'"]+covid-19-cases-in-massachusetts-as[^'"]+)/
-      url = 'https://www.mass.gov' + $1
-      `curl #{url} -o #{@path}#{@st}/#{@filetime}_1.pdf`
-      `open #{@path}#{@st}/#{@filetime}_1.pdf` unless @auto_flag
-      reader = PDF::Reader.new("#{@path}#{@st}/#{@filetime}_1.pdf")
-=begin
-      result = reader.page(1).text.gsub(/\s+/,' ').gsub(',','')
-      rows = reader.page(1).text.split("\n").map {|i| i.gsub(/\s+/,' ').gsub(',','')}
-      j = rows.map.with_index {|v,i| [v,i]}.select {|v,i| v=~/^County/}.first[1]
-      i = 0
-      h[:counties] = []
-      loop do
-        j += 1
-        break if i > 100 || rows[j] =~ /^Unknown/ || rows[j] =~ /^Sex/
-        if rows[j] =~ /^([A-Z][^\d]+)(\d+)/
-          h_county = {}
-          h_county[:name] = $1
-          h_county[:positive] = string_to_i($2)
-          h[:counties] << h_county
-        end
-        i += 1
-      end
-      if h[:counties].size < 13
-        @errors << 'missing counties'
-      end
-=end
-      result = reader.page(1).text.gsub(/\s+/,' ').gsub(',','')
-      if result =~ /(\d+) Attributed to COVID-19/
-        h[:deaths] = string_to_i($1)
-      else
-        @errors << 'missing deaths'
-      end
-      result = reader.page(4).text.gsub(/\s+/,' ').gsub(',','')
-      if result =~ /Total ?Patients ?Tested\*? [\d]+ ([\d]+)/
-        h[:tested] = string_to_i($1)
-      else
-        @errors << 'missing tested'
-      end
-    else
-      @errors << 'missing pdf'
-    end
-    h
+    MaCrawler.new(driver: @driver, url: @url, st: @st).call
   end
 
   def parse_md(h)
