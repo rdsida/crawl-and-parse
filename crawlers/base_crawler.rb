@@ -1,13 +1,22 @@
 # frozen_string_literal: true
 
+require 'byebug'
+require 'nokogiri'
+require 'selenium-webdriver'
+require 'pdf-reader'
+require 'humanize'
+require 'rtesseract'
+
+# Holds functionality common to all crawlers
 class BaseCrawler
   attr_accessor :errors, :results
+  include Utils
   def initialize(driver:, url: @url, st: @st)
-    @driver = driver
-    @url = url
-    @st = st
-    @path = 'data/'
-    @filetime = Time.now.to_s[0..18].gsub(' ', '-').gsub(':', '.')
+    @driver     = driver
+    @url        = url
+    @st         = st
+    @path       = 'data/'
+    @filetime   = Time.now.to_s[0..18].gsub(' ', '-').gsub(':', '.')
     @page_count = 0
     @errors = []
     begin
@@ -19,11 +28,19 @@ class BaseCrawler
     rescue StandardError => e
       @errors << "crawler failed for #{@st}: #{e.inspect}"
     end
-    @results = {
+
+    @results = results_init
+  end
+
+  # This needed to be extracted to its own method, because the old monolithic
+  # crawler inherits from this class but overrides the initialize method.
+  # Once all crawlers are extracted into their own classes, we can put it back.
+  def results_init
+    {
       source_urls: [@url],
       counties: [],
-      ts: Time.now.strftime('%e %b %Y %H:%M:%S%p'),
-      st: st
+      ts: Time.now,
+      st: @st
     }
   end
 
@@ -35,14 +52,16 @@ class BaseCrawler
     _find_recovered
     _find_hospitalized
     _find_counties
+    _find_towns
+
     @results
   end
 
   def wait
     Selenium::WebDriver::Wait.new(timeout: 60)
-  end 
+  end
 
-  def crawl_page(url)
+  def crawl_page(url = @url)
     @results[:source_urls] << url
     begin
       @driver.navigate.to(url)
@@ -79,4 +98,6 @@ class BaseCrawler
   def _find_counties
   end
 
+  def _find_towns
+  end
 end
