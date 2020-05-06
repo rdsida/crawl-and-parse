@@ -279,7 +279,7 @@ byebug
 
   # TODO death number is words
   def parse_ct(h)
-    CtCrawler.new(driver: @driver, url: @url).call
+    CtCrawler.new(driver: @driver, url: @url, st: @st).call
   end
 
   def parse_dc(h)
