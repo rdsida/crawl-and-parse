@@ -2309,6 +2309,7 @@ byebug unless @auto_flag
       h = {:ts => Time.now, :st => @st, :source_urls => [@url], :source_texts => []}
       begin
         h = send("parse_#{@st}", h)
+        @errors += h[:errors] 
       rescue => e
         @errors << "parse_#{@st} crashed: #{e.inspect}"
       end

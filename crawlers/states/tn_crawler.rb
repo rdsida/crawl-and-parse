@@ -54,12 +54,18 @@ class TnCrawler < BaseCrawler
 
   def _find_tested
     image = @driver.find_element(xpath: "//img[@title='COVID-19 Cases Tested']")
-    return unless image
+    unless image
+      @errors << 'missing image'
+      return
+    end
 
     image_url = image.attribute('src')
     image_string = RTesseract.new(image_url).to_s.strip.tr("\n", ' ').tr(',', '')
     w = /(\d+)\s*Tested/.match(image_string)
-    return unless w
+    unless w
+      @errors << 'parse failed for tested'
+      return
+    end
 
     @results[:tested] = w[1].to_i
   end
