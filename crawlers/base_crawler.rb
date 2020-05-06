@@ -33,12 +33,14 @@ class BaseCrawler
     _find_recovered
     _find_hospitalized
     _find_counties
+    _find_towns
+
     @results
   end
 
   def wait
     Selenium::WebDriver::Wait.new(timeout: 60)
-  end 
+  end
 
   def crawl_page(url)
     @results[:source_urls] << url
@@ -77,4 +79,6 @@ class BaseCrawler
   def _find_counties
   end
 
+  def _find_towns
+  end
 end
