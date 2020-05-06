@@ -516,7 +516,7 @@ byebug
   end
 
   def parse_hi(h)
-    HiCrawler.new(driver: @driver, url: @url).call
+    HiCrawler.new(driver: @driver, url: @url, st: @st).call
   end
 
   def parse_ia(h)
