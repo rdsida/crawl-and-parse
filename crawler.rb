@@ -1,11 +1,6 @@
-require 'byebug'
-require 'nokogiri'
-require 'selenium-webdriver'
-require 'pdf-reader'
-require 'humanize'
-require 'rtesseract'
-
-Dir["./crawlers/*.rb"].each { |file| require file }
+require './utils'
+require './crawlers/base_crawler'
+Dir['./crawlers/states/*.rb'].sort.each { |file| require file }
 
 # not automatic:
 # ['ak', "az", 'id', 'ks', 'mi', 'oh', "nd", 'ny', 'tn', 'wy']
@@ -58,8 +53,9 @@ h = {
 
 =end
 
-class Crawler
-
+# Once the individual parsers are extracted from this class, we can turn it into
+# a supervisor/runner
+class Crawler < BaseCrawler
   # parse_XXX methods for the 50 US states and DC
 
   def parse_ak(h)
@@ -2236,81 +2232,16 @@ byebug unless @auto_flag
     false
   end
 
-  # convert a string to an int
-  def string_to_i(s)
-    if !s
-      byebug unless @auto_flag
-      nil
-    end
-    return s if s.class == Integer
-    if s.class == String
-      s = s.strip.gsub(',','').gsub('-',' ').gsub(/\s+/,' ').downcase
-      x = @h_numbers[s]
-      return x if x
-    end
-    return 0 if s == "--"
-    if s =~/^([0-9]+)\s?K/
-      return $1.to_i * 1000
-    end
-    if s =~ /Appx\. (.*)/
-      s = $1
-    elsif s =~ /~(.*)/
-      s = $1
-    elsif s =~ /App/
-      byebug unless @auto_flag
-      ''
-    end
-    case s.strip
-    when "zero"
-      0
-    when "one"
-      1
-    when "two"
-      2
-    when "three"
-      3
-    when "four"
-      4
-    when "five"
-      5
-    when "six"
-      6
-    when "seven"
-      7
-    when "eight"
-      8
-    when "nine"
-      9
-    when "ten"
-      10
-    when 'eleven'
-      11
-    else
-      if s =~ /in progress/
-        nil
-      else
-        s = s.strip.gsub('‡','').gsub(',','')
-        if s =~ /([0-9]+)/
-          $1.to_i
-        else
-          puts "Please fix. Invalid number string: #{s}"
-          temp = nil
-          byebug unless @auto_flag
-          return temp
-        end
-      end
-    end
-  end
 
   def initialize
 
-profile = Selenium::WebDriver::Firefox::Profile.new
-#profile.add_extension("/path/to/extension.xpi")
-profile['browser.download.dir'] = '/Users/danny/Downloads'
-#profile['browser.download.folderList'] = 2
-profile['browser.helperApps.neverAsk.saveToDisk'] = "application/pdf, application/csv"
-profile['pdfjs.disabled'] = true
-options = Selenium::WebDriver::Firefox::Options.new(profile: profile)
+    profile = Selenium::WebDriver::Firefox::Profile.new
+    #profile.add_extension("/path/to/extension.xpi")
+    profile['browser.download.dir'] = '/Users/danny/Downloads'
+    #profile['browser.download.folderList'] = 2
+    profile['browser.helperApps.neverAsk.saveToDisk'] = "application/pdf, application/csv"
+    profile['pdfjs.disabled'] = true
+    options = Selenium::WebDriver::Firefox::Options.new(profile: profile)
 
     @driver = Selenium::WebDriver.for :firefox, options: options
     @path = 'data/'
@@ -2325,9 +2256,6 @@ options = Selenium::WebDriver::Firefox::Options.new(profile: profile)
       @h_prev[st][:positive] = positive.to_i if positive.size > 0
       @h_prev[st][:deaths] = deaths.to_i if deaths.size > 0
     end
-
-    @h_numbers = {}
-    1000.times {|i| @h_numbers[i.humanize.gsub('-',' ')] = i}
   end
 
   def method_missing(m, h)
@@ -2339,18 +2267,6 @@ options = Selenium::WebDriver::Firefox::Options.new(profile: profile)
     @driver.navigate.to @url
     byebug
     h
-  end
-
-  def crawl_page(url = @url)
-    begin
-      @driver.navigate.to(url)
-      open("#{@path}#{@st}/#{@filetime}_#{@page_count+=1}", 'w') do |f|
-        f.puts url
-        f.puts @driver.page_source
-      end
-    rescue => e
-      @errors << "crawl_page failed: #{e.inspect}"
-    end
   end
 
   # main execution loop
@@ -2375,6 +2291,7 @@ options = Selenium::WebDriver::Firefox::Options.new(profile: profile)
     url_list += (open('counties.csv').readlines.map {|i| i.strip.split("\t")}.map {|st, url| [st.downcase, url]})
     for @st, @url in url_list
       @page_count = 0 # used for naming saved page
+      @results = results_init
       next if crawl_list.size > 0 && !(crawl_list.include?(@st))
       puts "CRAWLING: #{@st}"
       skip_flag = false if @st == OFFSET
