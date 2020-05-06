@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 class BaseCrawler
+  attr_accessor :errors, :results
   def initialize(driver:, url: @url, st: @st)
     @driver = driver
     @url = url
@@ -8,19 +9,20 @@ class BaseCrawler
     @path = 'data/'
     @filetime = Time.now.to_s[0..18].gsub(' ', '-').gsub(':', '.')
     @page_count = 0
+    @errors = []
     begin
       @driver.navigate.to(@url)
       open("#{@path}#{@st}/#{@filetime}_#{@page_count+=1}", 'w') do |f|
         f.puts url
         f.puts @driver.page_source
       end
-    rescue
+    rescue StandardError => e
       @errors << "crawler failed for #{@st}: #{e.inspect}"
     end
     @results = {
       source_urls: [@url],
       counties: [],
-      ts: Time.now,
+      ts: Time.now.strftime('%e %b %Y %H:%M:%S%p'),
       st: st
     }
   end

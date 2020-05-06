@@ -20,3 +20,6 @@ gem "ffi", "~> 1.12"
 gem "pdf-reader", "~> 2.4"
 
 gem 'humanize'
+
+# testing
+gem 'rspec'
