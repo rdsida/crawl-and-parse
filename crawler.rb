@@ -733,54 +733,7 @@ end
   end
 
   def parse_me(h)
-    crawl_page
-    #byebug
-    cols = @doc.css('table').map {|i| i.text}.select {|i| i=~/Confirmed Cases/}.first.split("\n").map {|i| i.strip}.select {|i| i.size > 0}
-    if cols.size == 10
-    if x = cols.map.with_index {|v,i| [v,i]}.select {|v,i| v=~/^Deaths/}.first
-      h[:deaths] = string_to_i(cols[x[1]+4])
-    else
-      @errors << 'missing deaths'
-    end
-    if x = cols.map.with_index {|v,i| [v,i]}.select {|v,i| v=~/^Confirmed Cases/}.first
-      h[:positive] = string_to_i(cols[x[1]+4])
-    else
-      @errors << 'missing positive'
-    end
-    if x = cols.map.with_index {|v,i| [v,i]}.select {|v,i| v=~/^Presumptive Positive Cases/}.first
-      h[:positive] = 0 unless h[:positive]
-      h[:positive] += string_to_i(cols[x[1]+4])
-    else
-      @warnings << 'missing positive 2'
-    end
-    if x = cols.map.with_index {|v,i| [v,i]}.select {|v,i| v=~/^Negative Tests/}.first
-      h[:negative] = string_to_i(cols[x[1]+4])
-    else
-      @warnings << 'missing negative'
-    end
-    elsif cols.size == 6
-    if x = cols.map.with_index {|v,i| [v,i]}.select {|v,i| v=~/^Confirmed Cases/}.first
-      h[:positive] = string_to_i(cols[x[1]+2])
-    else
-      @errors << 'missing positive'
-    end
-    if x = cols.map.with_index {|v,i| [v,i]}.select {|v,i| v=~/^Negative Tests/}.first
-      h[:negative] = string_to_i(cols[x[1]+2])
-    else
-      @errors << 'missing negative'
-    end
-    else
-      @errors << 'table failed'
-    end
-    if x = cols.select {|i| i=~/^Updated: (.*)/}.first
-      x=~/^Updated: (.*)/
-      h[:date] = $1
-    else
-      @errors << 'missing date'
-    end
-    # counties
-    # demographics
-    h
+    MeCrawler.new(driver: @driver, url: @url, st: @st).call
   end
 
   def parse_mi(h)
