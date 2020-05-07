@@ -17,16 +17,21 @@ class AkCrawler < BaseCrawler
   end
 
   def _find_tested
-    # NOTE: I've been unsuccessfully digging into the "Combined Cumulated" graph,
-    # looking for the aria-label value of the last <circle>
-
-    #graph_next_arrow = @driver.find_element(xpath: '//a[@data-ember-action-415="415"]')
-    #return unless graph_next_arrow
-
-    #w = nil
-    #return unless w
-
-    #@results[:tested] = w[1].to_i 
+    sec = 4
+    loop do # open the cumulative tests by day graph
+      @_page_elements = nil
+      if /Cumulative Tests by Day \(Combined\)/.match(_page_elements)
+        @driver.find_element(id: "ember121").find_elements(tag_name: "circle").last.attribute("aria-label") =~ /([^\s]+)$/
+        @results[:tested] = string_to_i  $1
+        break
+      else
+        @driver.find_element(id: "ember413").click
+        sec -= 1
+        sleep 1
+        puts "#{sec} seconds remaining"
+      end
+      break if sec == 0
+    end
   end
   
   def _find_deaths
