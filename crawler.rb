@@ -233,40 +233,7 @@ byebug
   end
 
   def parse_ca(h)
-    #CaCrawler.new(driver: @driver, url: @url, st: @st).call
-    crawl_page
-    sec = SEC/5
-    loop do
-      @s = @driver.find_elements(id: 's4-workspace').first.text.gsub(/\s+/,' ')
-      if @s =~ /there are a total of (.*) positive cases and (.*) deaths /
-        h[:positive] = string_to_i($1)
-        h[:deaths] = string_to_i($2)
-        break
-      elsif sec == 0
-        @errors << 'CA parse failed'
-        break
-      end
-      sec -= 1
-      puts "sleeping...#{sec}"
-      sleep 1
-    end
-    url = 'https://www.cdph.ca.gov/Programs/OPA/Pages/New-Release-2020.aspx'
-    crawl_page url
-    urls = @driver.page_source.scan(/Programs\/OPA\/Pages\/NR[^"']+/).map {|i| 'https://www.cdph.ca.gov/' + i}.sort.reverse # NR20-32.aspx
-    url = urls.shift
-    while url =~ /NR20-32.aspx/
-      url = urls.shift
-    end
-    # Negative from CDPH report of 778 tests on 3/7, and 88 pos => 690 neg
-    crawl_page url
-    if (x=@driver.find_element(id: 'MainContent')) && x.text =~ /pproximately ([0-9,]+)([\+\*]+)? tests had been conducted in California/
-      h[:tested] = string_to_i($1)
-    else
-      byebug unless @auto_flag
-      @errors << 'missing tested'
-    end
-    # TODO source is 2 urls
-    h
+    CaCrawler.new(driver: @driver, url: @url, st: @st).call
   end
 
   def parse_co(h)
