@@ -1,0 +1,33 @@
+# frozen_string_literal: true
+# Copy me to XX_crawler.rb
+
+# In the main crawler class, replace applicable parse_XX method with:
+# def parse_XX(h)
+#   XXCrawler.new(driver: @driver, url: @url, st: @st).call
+# end
+
+# Replace XX with state code, i.e. Wi or Ca. Capitalize first letter
+class XXCrawler < BaseCrawler
+  protected
+
+  # Place results in @results[:statistic], i.e. @results[:positive]
+  # Skip if not available/applicable.
+
+  # _set_up_page
+
+  # _find_positive
+
+  # _find_tested
+  # if :tested is not available, find :negative
+
+  # _find_deaths
+
+  # _find_recovered
+
+  # _find_hospitalized
+
+  # _find_counties
+
+  # _find_towns
+end
+
