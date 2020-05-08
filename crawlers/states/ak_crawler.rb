@@ -17,21 +17,17 @@ class AkCrawler < BaseCrawler
   end
 
   def _find_tested
-    sec = 4
-    loop do # open the cumulative tests by day graph
-      @_page_elements = nil
-      if /Cumulative Tests by Day \(Combined\)/.match(_page_elements)
-        @driver.find_element(id: "ember121").find_elements(tag_name: "circle").last.attribute("aria-label") =~ /([^\s]+)$/
-        @results[:tested] = string_to_i  $1
-        break
-      else
-        @driver.find_element(id: "ember413").click
-        sec -= 1
-        sleep 1
-        puts "#{sec} seconds remaining"
-      end
-      break if sec == 0
-    end
+    # Turns out the 'combined cumulative' graph is in the DOM, even if the graph
+    # isn't displayed. The aria-labels look like this:
+    # "Combined Cumulative May 06, 2020 24,341"
+    value = Nokogiri::HTML.parse(@driver.page_source)
+                          .css('.amcharts-graph-bullet')
+                          .to_a
+                          .filter { |b| b['aria-label'].include? 'Cumulative' }
+                          .last['aria-label'] # Presumably we want the last one
+                          .match(/[\d,]+$/)[0] # Number at the end
+
+    @results[:tested] = string_to_i(value)
   end
   
   def _find_deaths
