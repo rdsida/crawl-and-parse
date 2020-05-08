@@ -85,6 +85,27 @@ class BaseCrawler
     end
   end
 
+  def save_image(url)
+    return unless url
+
+    begin
+      @driver.navigate.to url
+      extension = /\.\w+$/.match(url).to_s
+
+      wait.until {
+        @driver.find_element(xpath: '//img').displayed?
+      }
+
+      @driver.save_screenshot("#{@path}#{@st}/image_#{@filetime}#{extension}")
+    rescue Selenium::WebDriver::Error::NoSuchElementError => e
+      @errors << "crawler failed to save image for #{@st} at #{url}: #{e.inspect}"
+    ensure
+      @driver.navigate.back
+    end
+
+    true
+  end
+
   protected
 
   def _set_up_page
