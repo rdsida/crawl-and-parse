@@ -28,7 +28,7 @@ class MdCrawler < BaseCrawler
   end
 
   def _find_counties
-    counties.map do |county|
+    counties.each do |county|
       @results[:counties] << [:name, :positive].zip(county).to_h
     end
   end
@@ -39,18 +39,15 @@ class MdCrawler < BaseCrawler
     @page_elements ||=
       @driver.find_element(xpath: '//div[contains(@style, "#1c1b1a")]')
              .text
-             .delete("\n,:")
+             .delete("\n,:\*()")
   end
 
   def counties_elements
-    @counties_elements ||= @page_elements.scan(/Allegany.*By Age/)    
-                                         .first
-                                         .delete("()")
+    @counties_elements ||= @page_elements.scan(/Allegany.*By Age/).first
   end
 
   def counties
     # Regex may be improved to avoid catching "*"
     counties_elements.scan(/(\D+\D?) (\d+)/)
-                     .each { |c| c.first.delete!("*") }
   end
 end
