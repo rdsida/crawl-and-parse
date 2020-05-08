@@ -47,7 +47,6 @@ class MdCrawler < BaseCrawler
   end
 
   def counties
-    # Regex may be improved to avoid catching "*"
     counties_elements.scan(/(\D+\D?) (\d+)/)
   end
 end
