@@ -272,41 +272,10 @@ byebug
     h
   end
 
+  # https://news.delaware.gov/2020/03/29/public-health-announces-1-additional-death-18-additional-positive-cases-in-delaware/
+  # https://news.delaware.gov/2020/03/31/covid-19-in-delaware-public-health-announces-3-additional-deaths-55-more-positive-cases-in-delaware/
   def parse_de(h)
-    crawl_page
-    if url = @s.scan(/https:\/\/dshs.maps\.arcgis\.com\/apps\/opsdashboard\/index\.htm[^'"]+/).first
-      crawl_page url
-    else
-      @errors << 'dashboard url not found'
-      return h
-    end
-    sec = SEC/4
-    loop do
-      @s = @driver.find_elements(class: 'dashboard-page')[0].text.gsub(',','')
-      if @s =~ /Positive Cases\n(\d+)/
-        h[:positive] = string_to_i($1)
-        if @s =~ /Total Deaths\n(\d+)\n/
-          h[:deaths] = string_to_i($1)
-          if @s =~ /Negative Cases\n(\d+)/
-            h[:negative] = string_to_i($1)
-            break
-          end
-        end
-      end
-      sec -= 1
-      if sec == 0
-        @errors << 'parse failed'
-        return h
-      end
-      puts "sleeping... #{sec}"
-      sec -= 1
-      sleep 1
-    end
-    # https://news.delaware.gov/2020/03/29/public-health-announces-1-additional-death-18-additional-positive-cases-in-delaware/
-    # TODO tested, not available
-    # https://news.delaware.gov/2020/03/31/covid-19-in-delaware-public-health-announces-3-additional-deaths-55-more-positive-cases-in-delaware/
-    # TODO counties
-    h
+    DeCrawler.new(driver: @driver, url: @url, st: @st).call
   end
 
   def parse_fl(h)
