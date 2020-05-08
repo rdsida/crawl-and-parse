@@ -611,41 +611,7 @@ byebug
   end
 
   def parse_md(h)
-    # TODO county, age
-    crawl_page
-    sec = SEC/3
-    loop do
-      @s = @driver.find_elements(class: 'markdown-card').map {|i| i.text.gsub(',','')}.select {|i| i=~/Number of confirmed deaths/}[0]
-      if @s =~ /Number of confirmed cases : (\d+)\nNumber of negative test results : (\d+)\nNumber of confirmed deaths : (\d+)/
-        h[:positive] = string_to_i($1)
-        h[:negative] = string_to_i($2)
-        h[:deaths] = string_to_i($3)
-byebug unless @auto_flag
-        break
-      end
-      puts "sleeping...#{sec}"
-      sleep(1)
-      sec -= 1
-      if sec == 0
-        @errors << 'parse failed'
-        break
-      end
-    end
-
-if false
-    if (@driver.find_elements(class: 'container').map {|i| i.text}.select {|i| i=~/\nNumber of Deaths:([^\n]+)\n/}[0] =~ /\nNumber of Deaths:([^\n]+)\n/)
-      h[:deaths] = string_to_i($1)
-    else
-      @errors << "missing deaths"
-    end
-    if (@driver.find_elements(class: 'container').map {|i| i.text}.select {|i| i=~/\nNumber of negative test results:([^\n]+)\n/}[0] =~ /\nNumber of negative test results:([^\n]+)\n/)
-      h[:negative] = string_to_i($1)
-    else
-      @errors << "missing negative"
-    end
-end
-    # TODO raw not fully saved
-    h
+    MdCrawler.new(driver: @driver, url: @url, st: @st).call
   end
 
   def parse_me(h)
