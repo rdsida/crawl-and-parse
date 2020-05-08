@@ -585,27 +585,7 @@ byebug
   end
 
   def parse_ky(h)
-    crawl_page
-    cols = (s=@driver.find_elements(class: 'alert-success')[0].text).gsub(',','').split("\n").map {|i| i.strip}.select {|i| i.size >0}
-    @s += "\nBREAK\n" + s
-    if (x = cols.map.with_index {|v,i| [v,i]}.select {|v,i| v=~/^Number Tested:/}.first) && x[0] =~ /^Number Tested: ([0-9]+)/
-      h[:tested] = string_to_i($1)
-    else
-      @errors << 'missing tested'
-    end
-    if (x = cols.map.with_index {|v,i| [v,i]}.select {|v,i| v=~/^Positive:/}.first) && x[0] =~ /^Positive: ([0-9]+)/
-      h[:positive] = string_to_i($1)
-    else
-      @errors << 'missing positive'
-    end
-    if (x = cols.map.with_index {|v,i| [v,i]}.select {|v,i| v=~/^Deaths:/}.first) && x[0] =~ /^Deaths: ([0-9]+)/
-      h[:deaths] = string_to_i($1)
-    else
-      @errors << 'missing deaths'
-    end
-    #url = 'https://governor.ky.gov/news'
-    byebug unless @auto_flag
-    h
+    KyCrawler.new(driver: @driver, url: @url, st: @st).call
   end
 
   def parse_la(h)
