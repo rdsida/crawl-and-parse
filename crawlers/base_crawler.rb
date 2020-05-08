@@ -40,7 +40,7 @@ class BaseCrawler
     {
       source_urls: [@url],
       counties: [],
-      ts: Time.now,
+      ts: Time.now.strftime('%e %b %Y %H:%M:%S%p'),
       st: @st
     }
   end
