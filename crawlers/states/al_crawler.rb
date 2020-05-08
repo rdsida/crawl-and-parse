@@ -39,9 +39,22 @@ class AlCrawler < BaseCrawler
   private
 
   def _page_elements
-    @_page_elements ||= wait.until {
-      @driver.find_element(class: 'dashboard-page')
-    }.text.tr("\n", '')
+    @_page_elements ||= wait.until { _dashboard_page }
+                            .text
+                            .delete("\n")
+  end
+
+  def _dashboard_page
+    return unless _loading_finished
+
+    @driver.find_element(class: 'dashboard-page')
+  end
+
+  # The loading animations are the only elements with a 'spin' class.
+  def _loading_finished
+    @driver.find_element(class: 'dashboard-page') &&
+      !@driver.find_element(class: 'spin')
+  rescue Selenium::WebDriver::Error::NoSuchElementError
+    true
   end
 end
-
