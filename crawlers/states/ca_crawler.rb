@@ -23,7 +23,7 @@ class CaCrawler < BaseCrawler
     # Text from image
     image_element = html_element.find_element(xpath: "//img[contains(@alt, 'CA_COVID-19')]")
     image_url     = image_element.attribute('src')
-    @_image_text  = RTesseract.new('img.png').to_s.delete(',')
+    @_image_text  = RTesseract.new(image_url).to_s.delete(',')
     save_image(image_url)
 
     true
