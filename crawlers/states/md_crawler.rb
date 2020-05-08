@@ -21,6 +21,7 @@ class MdCrawler < BaseCrawler
 
   def _find_deaths
     @results[:deaths] = /Number of confirmed deaths  (\d+)/.match(page_elements)[1]&.to_i
+    @results[:deaths] += /Number of probable deaths\s+(\d+)/.match(page_elements)[1]&.to_i
   end
 
   def _find_hospitalized
