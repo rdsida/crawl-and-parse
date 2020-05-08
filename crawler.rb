@@ -1424,43 +1424,7 @@ byebug
   end
 
   def parse_ri(h)
-    crawl_page
-    sec = SEC/3
-    loop do
-      begin
-        break if (@s = @driver.find_elements(class: 'master')[0].text.gsub(',','')) =~ /Number of Rhode Island COVID-19 associated fatalities/
-      rescue => e
-      end
-      sec -= 1
-      if sec == 0
-        @errors << 'failed to parse'
-        return h
-      end
-      puts "sleeping...#{sec}"
-      sleep(1)
-    end
-    cols = @s.split("\n")
-    if (x = cols.select {|v,i| v=~/^Number of Rhode Island COVID-19 positive cases/}.first)
-      h[:positive] = string_to_i(x.strip.split.last)
-    else
-      @errors << 'missing pos'
-    end
-    if (x = cols.select {|v,i| v=~/^Number of people who have had negative test results/}.first)
-      h[:negative] = string_to_i(x.strip.split.last)
-    else
-      @errors << 'missing neg'
-    end
-    if (x = cols.select {|v,i| v=~/^Number of people for whom tests are pending/}.first)
-      h[:pending] = string_to_i(x.strip.split.last)
-    else
-      @warnings << 'missing pending'
-    end
-    if (x = cols.select {|v,i| v=~/^Number of Rhode Island.*fatalities/}.first)
-      h[:deaths] = string_to_i(x.strip.split.last)
-    else
-      @errors << 'missing deaths'
-    end
-    h
+    RiCrawler.new(driver: @driver, url: @url, st: @st).call
   end
 
   def parse_sc(h)
