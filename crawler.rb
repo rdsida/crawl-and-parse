@@ -1663,122 +1663,7 @@ byebug
   end
 
   def parse_wa(h)
-=begin
-    crawl_page
-    sec = SEC
-    urls = []
-    loop do
-      urls = @driver.page_source.scan(/https:\/\/[^'"]*powerbi\.com[^'"]+/)
-      break if urls.size > 1
-      sec -= 1
-      if sec == 0
-        @errors << 'url missing'
-        return h
-      end
-      puts "sleeping...#{sec}"
-      sleep 1
-    end
-    crawl_page urls[1]
-    sec = SEC
-    loop do
-      begin
-        #cols = @driver.find_elements(class: 'value').map {|i| i.text.gsub(',','').strip }.select {|i| (i=~/^\d+$/) && i.to_i>0 }.map {|i| i.to_i}.sort
-        #@s = @driver.find_elements(class: 'landingController')[0].text.gsub(',','')
-        #if @s =~ /Confirmed Cases\n Total Deaths\s+(\d+)\s(\d+)\s/
-        @s = @driver.find_elements(class: 'landingController').map {|i| i.text.gsub(',','')}.select {|i| i=~/Total Deaths/}.first
-        if @s
-          @s.gsub!("\n",'|')
-          @s.gsub!(/\s+/,' ')
-          if @s =~ /Cases|Total Deaths|Total tests|Percent Positive|(\d+)|(\d+)|(\d+)/
-            h[:positive] = $1.to_i
-            h[:deaths] = $2.to_i
-            h[:tested] = $3.to_i
-            break
-          end
-        end
-      rescue
-      end
-      sec -= 1
-      if sec == 0
-        @errors << 'parse failed, no data'
-        break
-      end
-      puts "sleeping...#{sec}"
-      sleep 1
-    end
-=end
-=begin
-    if (i=cols.find_index("County Positive/Confirmed Cases Deaths"))
-      i += 1
-      h[:counties] = []
-      while !(cols[i]=~/^Unassigned/) && !(cols[i]=~/^Total/) &&
-        cols[i].gsub(',','') =~ /(.*)\s([\d]+)\s([\d]+)/
-          h_county = {}
-          h_county[:name] = $1
-          h_county[:positive] = string_to_i($2)
-          h_county[:death] = string_to_i($3)
-          h[:counties] << h_county
-        i += 1
-      end
-    else
-      @errors << 'counties failed'
-    end
-    if h[:counties].size < 34
-      @errors << 'missing counties'
-    end
-=end
-
-
-    crawl_page
-
-    sec = SEC
-    cols = []
-    loop do
-      begin
-        cols = @driver.find_elements(id: 'dnn_content')[0].text.split("\n").map {|i| i.strip.gsub(',','')}.select {|i| i.size > 0}
-      rescue
-        sec -= 1
-        puts 'sleeping'
-        sleep 1
-      end
-      if sec == 0
-        @errors << 'cols fail'
-        break
-      end
-      break if cols.size > 0
-    end
-    x = cols.select {|i| i=~/^Negative\s+([^\s+]+)/}
-    if x.size == 1 && x[0] =~ /^Negative\s+([^\s+]+)/
-      h[:negative] = string_to_i($1)
-    else
-      @errors << 'negative'
-    end
-    if (x=cols.select {|i| i=~/^Total / && i.split.size==3}).size > 0 && (x=x[0].split) && x[0]=='Total'
-      h[:positive] = string_to_i(x[1])
-      h[:deaths] = string_to_i(x[2])
-    else
-      @errors << 'missing deaths'
-    end
-    if (i=cols.find_index("County Confirmed Cases Deaths"))
-      i += 1
-      h[:counties] = []
-      while !(cols[i]=~/^Unassigned/) && !(cols[i]=~/^Total/) &&
-        cols[i].gsub(',','') =~ /(.*)\s([\d]+)\s([\d]+)/
-          h_county = {}
-          h_county[:name] = $1
-          h_county[:positive] = string_to_i($2)
-          h_county[:death] = string_to_i($3)
-          h[:counties] << h_county
-        i += 1
-      end
-    else
-      @errors << 'counties failed'
-    end
-    if h[:counties].size < 34
-      @errors << 'missing counties'
-    end
-
-    h
+    WaCrawler.new(driver: @driver, url: @url, st: @st).call
   end
 
   def parse_wi(h)
@@ -2051,8 +1936,9 @@ byebug unless @auto_flag
       h = {:ts => Time.now, :st => @st, :source_urls => [@url], :source_texts => []}
       begin
         h = send("parse_#{@st}", h)
-        @errors += h[:errors] 
+        @errors += h[:errors]
       rescue => e
+        byebug
         @errors << "parse_#{@st} crashed: #{e.inspect}"
       end
 
