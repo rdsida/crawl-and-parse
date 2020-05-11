@@ -1251,47 +1251,7 @@ byebug
   end
 
   def parse_ok(h)
-    crawl_page
-    byebug unless @auto_flag
-    #byebug
-    cols = @doc.css('table').map {|i| i.text}.select {|i| i=~/Oklahoma Test Results/}.last.split("\n").select {|i| i.strip.size > 0}
-    if x = cols.map.with_index {|v,i| [v,i]}.select {|v,i| v=~/Positive \(In-State\)/}.first
-      h[:positive] = string_to_i(cols[x[1]+1])
-    else
-      @errors << 'missing positive'
-    end
-    if x = cols.map.with_index {|v,i| [v,i]}.select {|v,i| v=~/Positive \(Out-of-State\)/}.first
-      h[:positive] = 0 unless h[:positive]
-      h[:positive] += string_to_i(cols[x[1]+1])
-    else
-      @warnings << 'missing positive 2'
-    end
-    if x = cols.map.with_index {|v,i| [v,i]}.select {|v,i| v=~/Deaths/}.first
-      h[:deaths] = string_to_i(cols[x[1]+1])
-    else
-      @errors << 'missing deaths'
-    end
-    if x = cols.map.with_index {|v,i| [v,i]}.select {|v,i| v=~/Total Cumulative Negative Specimens/}.first
-      h[:negative] = string_to_i(cols[x[1]+1])
-    else
-      @errors << 'missing negative'
-    end
-    if x = cols.map.with_index {|v,i| [v,i]}.select {|v,i| v=~/Total Cumulative Number of Specimens to Date/}.first
-      h[:tested] = string_to_i(cols[x[1]+1])
-    else
-      @errors << 'missing tested'
-    end
-    if x = cols.map.with_index {|v,i| [v,i]}.select {|v,i| v=~/PUIs Pending Results/}.first
-      h[:pending] = string_to_i(cols[x[1]+1])
-    else
-      (@warnings << 'missing pending') if cols.size > 11
-    end
-    if x = cols.map.with_index {|v,i| [v,i]}.select {|v,i| v=~/Total Cumulative Hospitalizations/}.first
-      h[:hospitalized] = string_to_i(cols[x[1]+1])
-    else
-      @warnings << 'missing hospitalized'
-    end
-    h
+    OkCrawler.new(driver: @driver, url: @url, st: @st).call
   end
 
   def parse_or(h)
