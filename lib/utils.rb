@@ -1,4 +1,5 @@
 require_relative 'utils/string_converter'
+require_relative 'utils/pdf_parser'
 
 # Generic helper functions not specific to any class
 module Utils
