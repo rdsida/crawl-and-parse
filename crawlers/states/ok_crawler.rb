@@ -73,7 +73,7 @@ class OkCrawler < BaseCrawler
   end
 
   def latest_report
-    @latest_report ||= PdfParser.new latest_report_uri
+    @latest_report ||= PdfParser.new latest_report_uri, 'ok'
   end
 
   def latest_report_uri
