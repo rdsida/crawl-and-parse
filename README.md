@@ -40,3 +40,7 @@ Thanks, and stay safe!
 - Run `./bin/crawl_auto` to run it on all the states where everything is automatic. It will skip a few states
 that need manual guidance. The script reads `states.csv` which contains a URL to a coronavirus webpage for each state in the USA, including DC. It crawls these webpages and collects the data for each state and saves it in the /data dir.
 - Run `ruby parse_log.rb` to collect the data crawled and parsed. It compares the previously scraped data with the current scraped data and saves all the data into `all.csv`.
+
+## Hackathon submission
+
+see https://github.com/coronavirusapi/checkpoint-smart-contracts
