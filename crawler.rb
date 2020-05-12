@@ -1216,7 +1216,7 @@ byebug
         sleep 1
       end
     end # loop
-    if x = cols.map.with_index {|v,i| [v,i]}.select {|v,i| v=~/^Confirmed Cases/}.first
+    if x = cols.map.with_index {|v,i| [v,i]}.select {|v,i| v=~/^Total Cases/}.first
       h[:positive] = string_to_i(cols[x[1]-1])
     else
       @errors << 'missing positive'
