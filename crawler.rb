@@ -1103,48 +1103,7 @@ byebug
   end
 
   def parse_nv(h)
-    crawl_page
-    if @s =~ /"https:\/\/app\.powerbigov([^"]+)"/
-      @url = 'https://app.powerbigov' + $1
-    else
-      @errors << 'bi url not found'
-      return h
-    end
-    crawl_page
-    @s = ''
-    sec = SEC / 3
-    loop do
-      puts "sleeping...#{sec}"
-      sleep 1
-      sec -= 1
-      if sec == 0
-        @errors << 'failed to load'
-        return h
-      end
-      @driver.find_elements(class: 'pbi-glyph-chevronleftmedium').first.click rescue nil
-      x = @driver.find_elements(class: 'landingController')[0]
-      @s = x.text.gsub(',','') if x
-      flag = true
-      if @s =~ /\n([0-9]+)Deaths Statewide\n/
-        h[:deaths] = string_to_i($1)
-      else
-        flag = false
-      end
-      if @s =~ /\n([0-9K]+)People Tested\n/
-        h[:tested] = string_to_i($1)
-      else
-        flag = false
-      end
-
-      if (@s =~ /All\n([0-9]+)Negative\n([0-9]+)Positive\nResult/)
-        h[:negative] = string_to_i($1)
-        h[:positive] = string_to_i($2)
-      else
-        flag = false
-      end
-      return h if flag
-    end
-    h
+    NvCrawler.new(driver: @driver, url: @url, st: @st).call
   end
 
   def parse_ny(h)
