@@ -55,16 +55,8 @@ class BaseCrawler
     _find_counties
     _find_towns
 
-    if !@results[:tested] && !@results[:negative]
-      @errors << 'missing tested or negative'
-    end
-    if !@results[:positive]
-      @errors << 'missing positive'
-    end
-    if !@results[:deaths]
-      @errors << 'missing deaths'
-    end
-    @results[:errors] = @errors
+    _check_results
+
     @results
   end
 
@@ -131,5 +123,12 @@ class BaseCrawler
   end
 
   def _find_towns
+  def _check_results
+    unless @results[:tested] || @results[:negative]
+      @errors << 'missing tested or negative'
+    end
+    @errors << 'missing positive' unless @results[:positive]
+    @errors << 'missing deaths' unless @results[:deaths]
+    @results[:errors] = @errors
   end
 end
