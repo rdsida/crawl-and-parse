@@ -1,4 +1,4 @@
-require './utils'
+require './lib/utils'
 require './crawlers/base_crawler'
 Dir['./crawlers/states/*.rb'].sort.each { |file| require file }
 
