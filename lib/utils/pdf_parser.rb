@@ -29,7 +29,7 @@ module Utils
 
     # BASEDIR/data/xx/2020-05-12-17.34.41.pdf
     def filename
-      File.join BASEDIR, 'data', @state_code, filetime, '.pdf'
+      File.join BASEDIR, 'data', @state_code, filetime + '.pdf'
     end
 
     def save_file
