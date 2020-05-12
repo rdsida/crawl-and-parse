@@ -21,6 +21,9 @@ SEC = 30 # seconds to wait for page to load
 OFFSET = nil # if set, start running at that state
 SKIP_LIST = [] # skip these states
 
+# Used for making sure we drop data files in the correct path:
+BASEDIR = __dir__
+
 =begin
 
 Structure of the hash h, where STATE crawl data is stored
