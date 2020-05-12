@@ -1,4 +1,4 @@
-require './utils'
+require './lib/utils'
 require './crawlers/base_crawler'
 Dir['./crawlers/states/*.rb'].sort.each { |file| require file }
 
@@ -20,6 +20,9 @@ Dir['./crawlers/states/*.rb'].sort.each { |file| require file }
 SEC = 30 # seconds to wait for page to load
 OFFSET = nil # if set, start running at that state
 SKIP_LIST = [] # skip these states
+
+# Used for making sure we drop data files in the correct path:
+BASEDIR = __dir__
 
 =begin
 
