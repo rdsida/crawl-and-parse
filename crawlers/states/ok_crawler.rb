@@ -20,6 +20,7 @@ class OkCrawler < BaseCrawler
   def _set_up_page
     # The iframe is lazy-loaded, meaning we have to scroll it into view:
     @driver.execute_script 'window.scroll(0,1000)'
+
     wait.until { dash_loaded }
 
     @driver.switch_to.frame(dashboard)
@@ -54,11 +55,9 @@ class OkCrawler < BaseCrawler
     }
   end
 
-  # Seems to be the cleanest way to pick out data elements
+  # Returns an array of cards with interesting stats in them.
   def grid_items
-    @grid_items ||= Nokogiri::HTML.parse(@driver.page_source)
-                                  .css('div.react-grid-item')
-                                  .to_a
+    @driver.find_elements(css: 'div.react-grid-item')
   end
 
   def dash_loaded
@@ -84,9 +83,17 @@ class OkCrawler < BaseCrawler
   end
 
   def get_dashboard_number(query)
-    string_to_i grid_items.filter { |i| i.text.index(query)&.zero? }
-                          .first.text
-                          .delete_prefix(query).strip
-                          .split.first
+    item = wait.until do
+      # Find an item which starts with the given query
+      grid_items.filter { |i| i.text.index(query)&.zero? }
+                .first
+    end
+
+    # Rejigger it into an int
+    string_to_i item.text
+                    .delete_prefix(query)
+                    .strip
+                    .split
+                    .first
   end
 end
