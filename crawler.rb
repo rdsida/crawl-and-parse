@@ -1865,6 +1865,8 @@ byebug unless @auto_flag
         h = send("parse_#{@st}", h)
         @errors += h[:errors]
       rescue => e
+        raise unless CrawlAndParse.nofail
+
         byebug unless @auto_flag
         @errors << "parse_#{@st} crashed: #{e.inspect}"
       end

@@ -27,10 +27,7 @@ class BaseCrawler
         f.puts @driver.page_source
       end
     rescue StandardError => e
-      # If we're going to blindly catch every error, at least let me see the
-      # stack trace.
-
-      byebug
+      raise unless CrawlAndParse.nofail
 
       @errors << "crawler failed for #{@st}: #{e.inspect}"
     end
@@ -78,6 +75,8 @@ class BaseCrawler
         f.puts @driver.page_source
       end
     rescue StandardError
+      raise unless CrawlAndParse.nofail
+
       @errors << "crawler failed for #{@st}: #{e.inspect}"
     end
   end
