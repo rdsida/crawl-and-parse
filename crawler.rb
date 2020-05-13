@@ -1,5 +1,9 @@
-require './lib/utils'
-require './crawlers/base_crawler'
+# Used for making sure we drop data files in the correct path:
+BASEDIR = __dir__
+
+require_relative './lib/cli'
+require_relative './lib/utils'
+require_relative './crawlers/base_crawler'
 Dir['./crawlers/states/*.rb'].sort.each { |file| require file }
 
 # not automatic:
@@ -20,10 +24,6 @@ Dir['./crawlers/states/*.rb'].sort.each { |file| require file }
 SEC = 30 # seconds to wait for page to load
 OFFSET = nil # if set, start running at that state
 SKIP_LIST = [] # skip these states
-
-# Used for making sure we drop data files in the correct path:
-BASEDIR = __dir__
-
 =begin
 
 Structure of the hash h, where STATE crawl data is stored
@@ -1782,7 +1782,10 @@ byebug unless @auto_flag
   end
 
 
-  def initialize
+  # Options is a struct created by the CLI class
+  def initialize(crawl_list)
+    @options = CrawlAndParse.options
+    @crawl_list = crawl_list
 
     profile = Selenium::WebDriver::Firefox::Profile.new
     #profile.add_extension("/path/to/extension.xpi")
@@ -1824,8 +1827,10 @@ byebug unless @auto_flag
   # or you can specifiy the list of states to run
   # if auto_flag is false, will prompt you for certain states
   #
-  def run(crawl_list = [], auto_flag = true, debug_page_flag = false)
-    @auto_flag = auto_flag
+  def run
+    @auto_flag = CrawlAndParse.auto
+    debug_page_flag = CrawlAndParse.debug
+    crawl_list = @crawl_list
     h_all = []
     errors_crawl = []
     warnings_crawl = []
@@ -1860,6 +1865,8 @@ byebug unless @auto_flag
         h = send("parse_#{@st}", h)
         @errors += h[:errors]
       rescue => e
+        raise unless CrawlAndParse.nofail
+
         byebug unless @auto_flag
         @errors << "parse_#{@st} crashed: #{e.inspect}"
       end
