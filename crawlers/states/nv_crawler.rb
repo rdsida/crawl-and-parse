@@ -17,9 +17,6 @@ class NvCrawler < BaseCrawler
 
   private
 
-  # Place results in @results[:statistic], i.e. @results[:positive]
-  # Skip if not available/applicable.
-
   def _set_up_page
     # Scroll down a bit in case it's lazy loaded
     @driver.execute_script('window.scroll(0,1000)')
@@ -39,7 +36,10 @@ class NvCrawler < BaseCrawler
 
   def open_nav_menu
     @driver.find_element(css: 'a.middleText').click
-    true
+    wait.until do
+      @driver.find_element(id: 'flyoutElement')
+             .attribute('flyout-visible') == 'true'
+    end
   rescue Selenium::WebDriver::Error::ElementNotInteractableError,
          Selenium::WebDriver::Error::NoSuchElementError
     false
