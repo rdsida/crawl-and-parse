@@ -1,10 +1,5 @@
 #!/usr/bin/env ruby
 
-require './crawler'
+require_relative '../crawler'
 
-#
-# usage: ./bin/crawl [optional list of states]
-#
-
-crawler = Crawler.new
-errors = crawler.run(ARGV, false)
+CrawlAndParse::CLI.new(ARGV).call
