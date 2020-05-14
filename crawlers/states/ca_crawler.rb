@@ -21,11 +21,7 @@ class CaCrawler < BaseCrawler
     @_page_elements = html_element.text.delete(',')
 
     # Text from image
-    image_element = html_element.find_element(
-      xpath: "//img[contains(@alt, 'California COVID-19')]"
-    )
-
-    image_url     = image_element.attribute('src')
+    image_url     = html_element.find_element(class: 'NewsItemContent').find_element(tag_name: 'img').attribute('src')
     @_image_text  = RTesseract.new(image_url).to_s.delete(',')
     save_image(image_url)
 
@@ -52,4 +48,3 @@ class CaCrawler < BaseCrawler
     @results[:hospitalized] = hospitalized_confirmed + hospitalized_suspected
   end
 end
-
