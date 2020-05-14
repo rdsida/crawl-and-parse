@@ -798,55 +798,7 @@ end
   end
 
   def parse_nc(h)
-    crawl_page
-    @s = @driver.find_elements(class: 'field-item').map {|i| i.text.gsub(',','')}.select {|i| i=~/Completed Tests/}[0]
-    if @s =~ /\sCases Deaths Completed Tests Currently Hospitalized Number of Counties\s(\d+)\s(\d+)\s(\d+)\s(\d+)\s(\d+)/
-      h[:tested] = $3.to_i
-      h[:positive] = $1.to_i
-      h[:hospitalized] = $4.to_i
-      h[:deaths] = $2.to_i
-    else
-      byebug unless @auto_flag
-      @errors << 'parse failed'
-    end
-    return h
-
-    sec = SEC
-    cols = []
-    loop do
-      begin
-        cols = @driver.find_elements(class: 'content').map {|i| i.text}.select {|i| i=~/NC Completed Tests/i}.last.split("\n").map{|i| i.strip}.select{|i| i.size>0}
-        byebug if cols.size != 13 && !@auto_flag
-        break
-      rescue => e
-        sleep 1
-        puts "sleeping...#{sec}"
-        sec -= 1
-        break if sec == 0
-      end
-    end
-byebug
-    if x = cols.map.with_index {|v,i| [v,i]}.select {|v,i| v=~/^NC Cases/}.first
-      h[:positive] = string_to_i(cols[x[1]+4])
-    else
-      @errors << 'missing positive'
-    end
-    if x = cols.map.with_index {|v,i| [v,i]}.select {|v,i| v=~/^NC Deaths/i}.first
-      h[:deaths] = string_to_i(cols[x[1]+4])
-    else
-      @errors << 'missing deaths'
-    end
-    if x = cols.map.with_index {|v,i| [v,i]}.select {|v,i| v=~/^NC Completed Tests/i}.first
-      h[:tested] = string_to_i(cols[x[1]+4])
-    else
-      @errors << 'missing tested'
-    end
-    if x = cols.map.with_index {|v,i| [v,i]}.select {|v,i| v=~/Hospitalized/i}.first
-      h[:hospitalized] = string_to_i(cols[x[1]+4])
-    else
-      @errors << 'missing hospitalized'
-    end
-    h
+    NcCrawler.new(driver: @driver, url: @url, st: @st).call
   end
 
   def parse_nd(h)
