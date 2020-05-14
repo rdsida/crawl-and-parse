@@ -1005,59 +1005,7 @@ byebug
   end
 
   def parse_nj(h)
-    crawl_page
-    if (@s = @driver.find_elements(class: 'card-body').map {|i| i.text }.select {|i| i=~/Negative Results/}[0]) &&
-      @s.gsub(',','') =~ /Positive[^\d]+(\d+)\nDeaths[^\d]+(\d+)\nNegative Results[^\d]+(\d+)/
-      h[:positive] = $1.to_i
-      h[:deaths] = $2.to_i
-      h[:negative] = $3.to_i
-    else
-      @errors << 'parse failed'
-    end
-    url = 'https://covid19.nj.gov/'
-    crawl_page url
-    url = 'https://' + @driver.page_source.scan(/maps\.arcgis\.com\/apps\/opsdashboard\/index\.html[^'"]+/)[0]
-    crawl_page url
-    sec = SEC
-    county_pos = 0
-    loop do
-      cols = (@driver.find_element(class: 'dashboard-page').text.split("\n").map {|i| i.strip}) rescue []
-      if cols.size > 0
-        if (x=cols.map.with_index {|v,i| [v,i]}.select {|v,i| v=~/^Bergen County/}.first) &&
-          (y=cols.map.with_index {|v,i| [v,i]}.select {|v,i| v=~/^Salem County/}.first)
-          county_count = ((y[1]-x[1])/3+1)
-          if county_count == 21
-            h[:counties] = []
-            county_pos = 0
-            county_count.times do |i|
-              h_county = {}
-              j = i*3+x[1]
-              h_county[:name] = cols[j]
-              h_county[:positive] = string_to_i(cols[j+1].split("\s").first)
-              county_pos += string_to_i(cols[j+1].split("\s").first)
-              h_county[:deaths] = string_to_i(cols[j+2].split("\s").first)
-              h[:counties] << h_county
-            end
-            break
-          end
-        end
-      end
-      sec -= 1
-      if sec == 0
-        @errors << 'counties failed'
-        break
-      end
-      puts "sleeping...#{sec}"
-      sleep 1
-    end
-    if h[:counties].size < 21
-      @errors << 'missing counties'
-    end
-    if h[:positive] != county_pos
-      #@errors << 'county pos do not add up'
-      # provisional pos are not counted
-    end
-    h
+    NjCrawler.new(driver: @driver, url: @url, st: @st).call
   end
 
   def parse_nm(h)
