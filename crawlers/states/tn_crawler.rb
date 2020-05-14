@@ -67,7 +67,6 @@ class TnCrawler < BaseCrawler
     image_string = RTesseract.new(image_url, config_file: 'digits').to_s.strip.tr("\n", ' ').tr(',', '')
     save_image(image_url)
     # tesseract mangling 'Tested' so prioritize numbers in OCR and grab the first number
-    byebug
     w = /(\d+)/.match(image_string)
     unless w
       @errors << 'parse failed for tested'
