@@ -717,23 +717,7 @@ byebug
   end
 
   def parse_ms(h)
-    crawl_page
-# TODO get counties
-    if (s=@driver.find_elements(id: 'msdhTotalCovid-19Cases')[0]) &&
-      (s.text.gsub(',','') =~ /\nTotal\s([0-9]+)\s([0-9]+)/)
-      h[:positive] = string_to_i($1)
-      h[:deaths] = string_to_i($2)
-    else
-      @errors << 'missing positive and deaths'
-    end
-    s = @doc.css('body').text.gsub(',','')
-    if s =~ /Total individuals tested for COVID-19 statewide[^\d]+([0-9]+)/i
-      h[:tested] = string_to_i($1)
-    else
-      @errors << 'missing tested'
-    end
-    # counties in a nice table
-    h
+    MsCrawler.new(driver: @driver, url: @url, st: @st).call
   end
 
   def parse_mt(h)
