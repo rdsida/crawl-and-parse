@@ -360,37 +360,7 @@ byebug
   end
 
   def parse_ga(h)
-    crawl_page
-    @s = @driver.find_element(id: "KPI1").text
-    if @s =~ /Total Tests\*\n(.+)\n/
-      h[:tested] = string_to_i($1)
-    else
-      @errors << "missing tests"
-    end
-    if @s =~ /Confirmed COVID-19 Cases\*\*\n(.+)\n/
-      h[:positive] = string_to_i($1)
-    else
-      @errors << "missing positive"
-    end
-    if @s =~ /\nDeaths\*\*\n(.+)/
-      h[:deaths] = string_to_i($1)
-    else
-      @errors << "missing deaths"
-    end
-    # add counties
-    h[:counties] = []
-    rows  = @driver.find_elements(class: "MuiTableRow-root").map{|i| i.text}
-    indexes = rows.first.split("\n").each_with_index.select{|x,i| ["County", "Confirmed Cases", "Total Deaths"].include? x}.to_h
-    # returns {"County" => 0, "Confirmed Cases" => 1 , "Total Deaths" => 3}
-    rows.each do |county|
-      county_arr = county.split(" ")
-      h_county = {}
-      h_county[:name] = county_arr[indexes["County"]]
-      h_county[:positive] = county_arr[indexes["Confirmed Cases"]].to_i
-      h_county[:deaths] = county_arr[indexes["Total Deaths"]].to_i
-      h[:counties] << h_county
-    end
-    h
+    GaCrawler.new(driver: @driver, url: @url, st: @st).call
   end
 
   def parse_hi(h)
