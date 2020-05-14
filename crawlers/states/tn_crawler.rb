@@ -64,9 +64,11 @@ class TnCrawler < BaseCrawler
     end
 
     image_url = image.attribute('src')
-    image_string = RTesseract.new(image_url).to_s.strip.tr("\n", ' ').tr(',', '')
+    image_string = RTesseract.new(image_url, config_file: 'digits').to_s.strip.tr("\n", ' ').tr(',', '')
     save_image(image_url)
-    w = /(\d+)\s*Tested/.match(image_string)
+    # tesseract mangling 'Tested' so prioritize numbers in OCR and grab the first number
+    byebug
+    w = /(\d+)/.match(image_string)
     unless w
       @errors << 'parse failed for tested'
       return
