@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'byebug'
+require 'pry'
 require 'nokogiri'
 require 'selenium-webdriver'
 require 'pdf-reader'

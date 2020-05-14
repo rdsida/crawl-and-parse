@@ -1071,52 +1071,7 @@ end
   end
 
   def parse_or(h)
-    crawl_page
-    sec = SEC/3
-    cols = []
-    loop do
-      begin
-        cols = @driver.find_elements(class: 'card-body').map {|i| i.text.gsub(',','')}.select {|i| i=~/Total deaths/i}.first.split("\n")
-
-        break
-      rescue => e
-        if sec == 0
-          @errors << 'parse failed'
-          return h
-        end
-        sec -= 1
-        puts "sleeping...#{sec}"
-        sleep 1
-      end
-    end # loop
-    if (x = cols.select {|v,i| v=~/^Positive ([0-9]+)/}.first) && x=~/^Positive ([0-9]+)/
-      h[:positive] = string_to_i($1)
-    else
-      @errors << 'missing positive'
-    end
-    if (x = cols.select {|v,i| v=~/^Negative ([0-9]+)/}.first) && x=~/^Negative ([0-9]+)/
-      h[:negative] = string_to_i($1)
-    else
-      @errors << 'missing negative'
-    end
-    if (x = cols.select {|v,i| v=~/^Pending ([0-9]+)/}.first) && x=~/^Pending ([0-9]+)/
-      h[:pending] = string_to_i($1)
-    else
-      @warnings << 'missing pending'
-    end
-    if (x = cols.select {|v,i| v=~/^Total .* tested/}.first)
-      h[:tested] = string_to_i(x.split.last)
-    else
-      @errors << 'missing tested'
-    end
-    if (x = cols.select {|v,i| v=~/^Total Deaths/i}.first)
-      h[:deaths] = string_to_i(x.split.last)
-    else
-      @errors << 'missing deaths'
-    end
-    # counties
-    # hospitalized
-    h
+    OrCrawler.new(driver: @driver, url: @url, st: @st).call
   end
 
   def parse_pa(h)
