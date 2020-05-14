@@ -43,7 +43,8 @@ class BaseCrawler
       source_urls: [@url],
       counties: [],
       ts: Time.now,
-      st: @st
+      st: @st,
+      errors: @errors
     }
   end
 
