@@ -592,56 +592,7 @@ byebug
   end
 
   def parse_mi(h)
-    # TODO sex, age, hospitalization
-    crawl_page
-    x = @driver.find_elements(class: 'moreLink').select {|i| i.text =~ /Cumulative Data/i}.first
-    unless x
-      @errors << 'button not found'
-      return h
-    end
-    x.click
-    if @s =~ /Updated COVID-19 reported data has been delayed and will be displayed as soon as available/
-      @errors << 'MI data being prepared'
-      return h
-    end
-    sleep 1
-    cols = @driver.find_elements(class: 'fullContent')[0].text.gsub(',','').split("\n").map {|i| i.strip}.select {|i| i.size>0}
-    if (x = cols.select {|i| i=~ /^Totals/}.first) && x=~/Totals\s(\d+)\s(\d+)/
-      h[:positive] = string_to_i($1)
-      h[:deaths] = string_to_i($2)
-    else
-      @errors << 'missing positive'
-    end
-
-# cols = @driver.find_elements(class: 'fullContent')[0].text.split("\n").map {|i| i.strip}
-# h[:tested] = (3..53).to_a.map {|i| cols[i].split("\s")[-2].gsub(',','').to_i }.sum
-
-
-
-    @s = @driver.find_element(id: 'bodyWrapper').text.gsub(',','')
-    if x = @s.scan(/Grand Total ([\d]+) ([\d]+) [\d]+/).first
-      h[:tested] = string_to_i(x[0]) + string_to_i(x[1])
-    else
-      @errors << 'missing tested'
-    end
-    cols = @s.split("\n").map {|i| i.strip}
-    x = cols.map.with_index {|v,i| [v,i]}.select {|v,i| v =~ /County Cases Reported Deaths/}.first
-    i = x[1] + 1
-    h[:counties] = []
-    while !(cols[i] =~ /Other/) && !(cols[i] =~ /Out of State/) &&
-      (cols[i] =~ /([^\d]+)[^\d]+([\d]+)[^\d]+([\d]+)/ ||
-       cols[i] =~ /([^\d]+)[^\d]+([\d]+)/)
-      h_county = {}
-      h_county[:name] = $1
-      h_county[:positive] = $2.to_i
-      h_county[:deaths] = $3.to_i
-      h[:counties] << h_county
-      i += 1
-    end
-    if h[:counties].size < 58
-      @errors << 'missing counties'
-    end
-    h
+    MiCrawler.new(driver: @driver, url: @url, st: @st).call
   end
 
   def parse_mn(h)
