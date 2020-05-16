@@ -4,16 +4,6 @@
 
 # Replace XX with state code, i.e. Wi or Ca. Capitalize first letter
 class NvCrawler < BaseCrawler
-  def call
-    _set_up_page
-
-    _parse_test_results
-    _find_hospitalized
-
-    _check_results
-
-    @results
-  end
 
   private
 
@@ -24,9 +14,16 @@ class NvCrawler < BaseCrawler
     # Luckily there's only one iframe
     @driver.switch_to.frame(@driver.find_element(tag_name: 'iframe'))
 
+    wait.until {
+      (element=@driver.find_element(class: 'displayAreaContainer')) &&
+        (@s=element.text.gsub(',','')) && 
+        @s =~ /\n(\d+)Deaths Statewide\n/ &&
+        @s =~ /\n(\d+)Negative\n(\d+)Positive\n/   
+    }
+
     # The dashboard is given in several pages, and the selected page is
     # persistent between page loads.
-    go_to_page 'Test Results'
+    #go_to_page 'Test Results'
   end
 
   def go_to_page(name)
@@ -45,19 +42,28 @@ class NvCrawler < BaseCrawler
     false
   end
 
-  def _parse_test_results
-    query_hash.each_pair do |key, query|
-      @results[key] = get_int query
+  def _find_deaths
+    if @s =~ /\n(\d+)Deaths Statewide\n/
+      @results[:deaths] = $1.to_i
     end
+  end
+
+  def _find_tested
+    if @s =~ /\n(\d+)Negative\n(\d+)Positive\n/
+      @results[:negative] = $1.to_i
+      @results[:positive] = $2.to_i
+    end
+    #query_hash.each_pair do |key, query|
+    #  @results[key] = get_int query
+    #end
   end
 
   # Hostpitalized nubmers are on a different page, in a graph, split into
   # suspected and confirmed.
   def _find_hospitalized
-    go_to_page 'Hospitalizations'
-
-    @results[:hospitalized] = parse_graph('Confirmed') +
-                              parse_graph('Suspected')
+    #go_to_page 'Hospitalizations'
+    #@results[:hospitalized] = parse_graph('Confirmed') +
+    #                          parse_graph('Suspected')
   end
 
   def query_hash
@@ -94,11 +100,9 @@ class NvCrawler < BaseCrawler
 
   def parse_graph(query)
     wait.until { graph_bars.any? }
-
     bars = graph_bars.filter do |bar|
       bar.attribute('aria-label').include? query
     end
-
     string_to_i bars.last.attribute('aria-label').match(/([\d,]+)\.$/)[1]
   end
 
