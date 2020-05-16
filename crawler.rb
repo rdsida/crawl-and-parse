@@ -770,49 +770,7 @@ end
   end
 
   def parse_ne(h)
-    crawl_page
-    if @s =~ /<strong>.Updated&#58\; <\/strong>([^<]+)</
-      h[:date] = $1
-    else
-      @warnings << "missing date"
-    end
-    if url = @driver.page_source.scan(/https:\/\/arcg.is[^'"]+/).first
-    else
-      @errors << 'missing url'
-      return h
-    end
-    crawl_page url
-    sec = SEC
-    loop do
-      @s = @driver.find_element(class: 'dashboard-page').text.gsub(',','')
-      flag = true
-      if @s =~ /Total positive cases\n([\d]+)/
-        h[:positive] = string_to_i($1)
-      else
-        flag = false
-      end
-      if @s =~ /Total tested\n([\d]+)/
-        h[:tested] = string_to_i($1)
-      else
-        flag = false
-      end
-      if @s =~ /Deaths\n([\d]+)/
-        h[:deaths] = string_to_i($1)
-      else
-        flag = false
-      end
-      if flag
-        break
-      end
-      sec -= 1
-      if sec == 0
-        @errors << 'parse failed'
-        break
-      end
-      puts "sleeping...#{sec}"
-      sleep 1
-    end
-    h
+    NeCrawler.new(driver: @driver, url: @url, st: @st).call
   end
 
   def parse_nh(h)
@@ -1058,51 +1016,7 @@ end
   end
 
   def parse_pr(h)
-    crawl_page
-    sec = SEC
-    cols = []
-    table=nil
-    loop do
-      begin
-        table = @driver.find_elements(class: 'ms-rteTableEvenCol-10').first
-        break
-      rescue => e
-        puts "sleeping...#{sec}"
-        sleep 1
-        sec -= 1
-        break if sec == 0
-      end
-    end
-    h2 = table.find_elements(tag_name: 'h2').first
-    h[:tested] = h2.text.gsub(/,/,'').to_i
-    table = nil
-    loop do
-      begin
-        table = @driver.find_elements(class: 'ms-rteTableOddCol-10').first
-        break
-      rescue => e
-        puts "sleeping...#{sec}"
-        sleep 1
-        sec -= 1
-        break if sec == 0
-      end
-    end
-    h2 = table.find_elements(tag_name: 'h2').first
-    h[:positive] = h2.text.gsub(/,/,'').to_i
-    loop do
-      begin
-        table = @driver.find_elements(class: 'ms-rteTableEvenCol-10')[2]
-        break
-      rescue => e
-        puts "sleeping...#{sec}"
-        sleep 1
-        sec -= 1
-        break if sec == 0
-      end
-    end
-    h2 = table.find_elements(tag_name: 'h2').first
-    h[:deaths] = h2.text.gsub(/,/,'').to_i
-    h
+    PrCrawler.new(driver: @driver, url: @url, st: @st).call
   end
 
   def parse_ri(h)
@@ -1173,7 +1087,7 @@ end
   end
 
   def parse_sd(h)
-    SDCrawler.new(driver: @driver, url: @url, st: @st).call
+    SdCrawler.new(driver: @driver, url: @url, st: @st).call
   end
 
   def parse_tn(h)

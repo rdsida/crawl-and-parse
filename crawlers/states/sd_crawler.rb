@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-class SDCrawler < BaseCrawler
+class SdCrawler < BaseCrawler
   protected
 
   def _set_up_page

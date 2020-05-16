@@ -2,7 +2,7 @@
 
 require_relative '../crawler'
 
-states = %w[ak az ca ct ia id ks ma mi nd ny oh ok pr ri sd vt wi wy]
+states = %w[az fl ia id ks ny oh vt wi wy]
 
 errors = CrawlAndParse::CLI.new(states << '--nofail').call
 
