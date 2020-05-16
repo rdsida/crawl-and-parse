@@ -18,12 +18,12 @@ class CaCrawler < BaseCrawler
     return unless html_element
 
     # Text from HTML
-    @_page_elements = html_element.text.tr(',', '')
+    @_page_elements = html_element.text.delete(',')
 
     # Text from image
-    image_element = html_element.find_element(xpath: "//img[contains(@alt, 'CA_COVID-19')]")
-    image_url     = image_element.attribute('src')
-    @_image_text  = RTesseract.new(image_url).to_s.tr(',', '')
+    image_url     = html_element.find_element(class: 'NewsItemContent').find_element(tag_name: 'img').attribute('src')
+    @_image_text  = RTesseract.new(image_url).to_s.delete(',')
+    save_image(image_url)
 
     true
   end
@@ -41,11 +41,10 @@ class CaCrawler < BaseCrawler
   end
 
   def _find_hospitalized
-    hospitalized = /-> (\d+)\/\d+ (\d+)/.match(@_image_text)
+    hospitalized = /(\d+)\/\d+ (\d+)\/\d+/.match(@_image_text)
     hospitalized_confirmed = hospitalized[1]&.to_i
     hospitalized_suspected = hospitalized[2]&.to_i
 
     @results[:hospitalized] = hospitalized_confirmed + hospitalized_suspected
   end
 end
-

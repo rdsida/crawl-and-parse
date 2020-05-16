@@ -3,3 +3,4 @@ old
 debug
 *.swp
 data
+.DS_Store

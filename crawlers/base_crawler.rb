@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'byebug'
+require 'pry'
 require 'nokogiri'
 require 'selenium-webdriver'
 require 'pdf-reader'
@@ -22,11 +23,13 @@ class BaseCrawler
     @errors = []
     begin
       @driver.navigate.to(@url)
-      open("#{@path}#{@st}/#{@filetime}_#{@page_count+=1}", 'w') do |f|
+      open("#{@path}#{@st}/#{@filetime}_#{@page_count += 1}", 'w') do |f|
         f.puts url
         f.puts @driver.page_source
       end
     rescue StandardError => e
+      raise unless CrawlAndParse.nofail
+
       @errors << "crawler failed for #{@st}: #{e.inspect}"
     end
 
@@ -40,8 +43,9 @@ class BaseCrawler
     {
       source_urls: [@url],
       counties: [],
-      ts: Time.now.strftime('%e %b %Y %H:%M:%S%p'),
-      st: @st
+      ts: Time.now,
+      st: @st,
+      errors: @errors
     }
   end
 
@@ -55,16 +59,8 @@ class BaseCrawler
     _find_counties
     _find_towns
 
-    if !@results[:tested] && !@results[:negative]
-      @errors << 'missing tested or negative'
-    end
-    if !@results[:positive]
-      @errors << 'missing positive'
-    end
-    if !@results[:deaths]
-      @errors << 'missing deaths'
-    end
-    @results[:errors] = @errors
+    _check_results
+
     @results
   end
 
@@ -76,39 +72,64 @@ class BaseCrawler
     @results[:source_urls] << url
     begin
       @driver.navigate.to(url)
-      open("#{@path}#{@st}/#{@filetime}_#{@page_count+=1}", 'w') do |f|
+      open("#{@path}#{@st}/#{@filetime}_#{@page_count += 1}", 'w') do |f|
         f.puts url
         f.puts @driver.page_source
       end
-    rescue
+    rescue StandardError
+      raise unless CrawlAndParse.nofail
+
       @errors << "crawler failed for #{@st}: #{e.inspect}"
     end
   end
 
+  def save_image(url)
+    return unless url
+
+    begin
+      @driver.navigate.to url
+      extension = /\.\w+$/.match(url).to_s
+
+      wait.until do
+        @driver.find_element(xpath: '//img').displayed?
+      end
+
+      @driver.save_screenshot("#{@path}#{@st}/image_#{@filetime}#{extension}")
+    rescue Selenium::WebDriver::Error::NoSuchElementError => e
+      @errors << "crawler failed to save image for #{@st} at #{url}: #{e.inspect}"
+    ensure
+      @driver.navigate.back
+    end
+
+    true
+  end
+
   protected
 
-  def _set_up_page
-  end
+  def _set_up_page; end
 
-  def _find_positive
-  end
+  def _find_positive; end
 
   def _find_tested
     # if :tested is not available, find :negative
   end
 
-  def _find_deaths
-  end
+  def _find_deaths; end
 
-  def _find_recovered
-  end
+  def _find_recovered; end
 
-  def _find_hospitalized
-  end
+  def _find_hospitalized; end
 
-  def _find_counties
-  end
+  def _find_counties; end
 
-  def _find_towns
+  def _find_towns; end
+
+  def _check_results
+    unless @results[:tested] || @results[:negative]
+      @errors << 'missing tested or negative'
+    end
+    @errors << 'missing positive' unless @results[:positive]
+    @errors << 'missing deaths' unless @results[:deaths]
+    @results[:errors] = @errors
   end
 end

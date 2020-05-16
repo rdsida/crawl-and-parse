@@ -1,18 +1,15 @@
 #!/usr/bin/env ruby
 
-require './crawler'
+require_relative '../crawler'
 
-crawler = Crawler.new
-crawler.run(['ak', "az", 'ca', 'ct', 'ia', 'id', 'ks', 'ma', 'mi', "nd", 'ny', 'oh', 'ok', 'pr', 'ri', 'sd', 'vt', 'wi', 'wy'], false)
+states = %w[az fl ia id ks ny oh vt wi wy]
 
-errors = crawler.run
+errors = CrawlAndParse::CLI.new(states << '--nofail').call
 
-puts
-puts 'done with full run'
-puts
+puts "\ndone with full run\n"
 
-while errors.size > 0
-  puts "ready to run errors again:"
+until errors.empty?
+  puts 'ready to run errors again:'
   byebug
-  errors = crawler.run(errors)
+  errors = CrawlAndParse::CLI.new(errors).run
 end

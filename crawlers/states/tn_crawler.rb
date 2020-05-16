@@ -10,6 +10,7 @@ class TnCrawler < BaseCrawler
 
     image_url = image.attribute('src')
     image_string = RTesseract.new(image_url).to_s.strip.tr("\n", ' ').tr(',', '')
+    save_image(image_url)
     w = /(\d+)\s*Hospitalized/.match(image_string)
     return unless w
 
@@ -22,6 +23,7 @@ class TnCrawler < BaseCrawler
 
     image_url = image.attribute('src')
     image_string = RTesseract.new(image_url).to_s.strip.tr("\n", ' ').tr(',', '')
+    save_image(image_url)
     w = /(\d+)\s*Cases/.match(image_string)
     return unless w
 
@@ -34,6 +36,7 @@ class TnCrawler < BaseCrawler
 
     image_url = image.attribute('src')
     image_string = RTesseract.new(image_url).to_s.strip.tr("\n", ' ').tr(',', '')
+    save_image(image_url)
     w = /(\d+)\s*Deaths/.match(image_string)
     return unless w
 
@@ -46,6 +49,7 @@ class TnCrawler < BaseCrawler
 
     image_url = image.attribute('src')
     image_string = RTesseract.new(image_url).to_s.strip.tr("\n", ' ').tr(',', '')
+    save_image(image_url)
     w = /(\d+)\s*Deaths/.match(image_string)
     return unless w
 
@@ -60,8 +64,10 @@ class TnCrawler < BaseCrawler
     end
 
     image_url = image.attribute('src')
-    image_string = RTesseract.new(image_url).to_s.strip.tr("\n", ' ').tr(',', '')
-    w = /(\d+)\s*Tested/.match(image_string)
+    image_string = RTesseract.new(image_url, config_file: 'digits').to_s.strip.tr("\n", ' ').tr(',', '')
+    save_image(image_url)
+    # tesseract mangling 'Tested' so prioritize numbers in OCR and grab the first number
+    w = /(\d+)/.match(image_string)
     unless w
       @errors << 'parse failed for tested'
       return
