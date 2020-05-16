@@ -4,8 +4,10 @@ class WaCrawler < BaseCrawler
   protected
 
   def _set_up_page
-    sleep(5)
-    @driver.find_element(id: 'togConfirmedCasesDeathsTbl').click
+    element = wait.until {
+      @driver.find_element(id: 'togConfirmedCasesDeathsTbl')
+    }
+    element.click
     @driver.find_element(id: 'togTestingTbl').click
     @driver.find_element(id: 'togHospAndIcuTbl').click
 

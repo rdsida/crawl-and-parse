@@ -1173,27 +1173,7 @@ end
   end
 
   def parse_sd(h)
-    crawl_page
-    tables = @doc.css('table').map {|i| i.text.gsub(',','').gsub(/\s+/,' ').gsub('*','')}
-    if (t = tables.select {|i| i=~/SOUTH DAKOTA CASE COUNTS/}[0]) &&
-      t =~ /Positive ([0-9]+) Negative ([0-9]+) Pending ([0-9]+)/
-      h[:positive] = string_to_i($1)
-      h[:negative] = string_to_i($2)
-      h[:pending] = string_to_i($3)
-      h[:tested] = h[:positive] + h[:negative] + h[:pending]
-    else
-      @errors << "missing pos neg pending"
-    end
-    if (t = tables.select {|i| i=~/COVID-19 IN SOUTH DAKOTA/}[0]) &&
-      #t =~ /Cases ([0-9]+) Deaths ([0-9]+) Recovered ([0-9]+)/
-      t =~ /Deaths\s(\d+)\sRecovered\s(\d+)\s/
-      #h[:hospitalzed] = string_to_i($2)
-      h[:deaths] = string_to_i($1)
-      h[:recovered] = string_to_i($2)
-    else
-      @errors << "missing deaths"
-    end
-    h
+    SDCrawler.new(driver: @driver, url: @url, st: @st).call
   end
 
   def parse_tn(h)

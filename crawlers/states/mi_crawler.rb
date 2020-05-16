@@ -17,12 +17,13 @@ class MiCrawler < BaseCrawler
   def _find_tested
     x = @driver.find_elements(class: 'moreLink').select {|i| i.text =~ /Cumulative Data/i}.first
     x.click
-    sleep 2
-    unless @driver.page_source =~ /<a href\="([^"]+)">Lab Testing/
-      @errors << 'missing tested'
-      return
-    end
-    url = 'https://www.michigan.gov' + $1
+    url = wait.until {
+      if @driver.page_source =~ /<a href\="([^"]+)">Lab Testing/
+        'https://www.michigan.gov' + $1
+      else
+        nil
+      end
+    }
     crawl_page url
     cols = @driver.find_elements(class: 'fullContent')[0].text.split("\n").map {|i| i.strip}
     i = 2 
