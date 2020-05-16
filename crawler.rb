@@ -1620,7 +1620,7 @@ byebug unless @auto_flag
       @doc = Nokogiri::HTML(@s)
       @errors = []
       @warnings = []
-      h = {:ts => Time.now, :st => @st, :source_urls => [@url], :source_texts => []}
+      h = {:ts => Time.now, :st => @st, :source_urls => [@url], :source_texts => [], :errors => []}
       begin
         h = send("parse_#{@st}", h)
         @errors += h[:errors]
