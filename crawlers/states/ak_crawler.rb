@@ -5,8 +5,9 @@ class AkCrawler < BaseCrawler
   protected
 
   def _set_up_page
-    url = @driver.page_source
-                 .scan(%r{https[^'"]+arcgis\.com/apps/opsdashboard[^'"]+})[0]
+    url = wait.until { 
+      @driver.page_source.scan(%r{https[^'"]+arcgis\.com/apps/opsdashboard[^'"]+}).first
+    }
     @driver.navigate.to(url)
   end
 
