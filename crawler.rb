@@ -1169,24 +1169,10 @@ byebug
   end
 
   def parse_wi(h)
+    WiCrawler.new(driver: @driver, url: @url, st: @st).call
     # direct data available here:
     # https://dhsgis.wi.gov/server/rest/services/DHS_COVID19/COVID19_WI/MapServer/3/query?where=1%3D1&outFields=*&outSR=4326&f=json
     # counties also available
-    crawl_page
-    if @s =~ /As of ([^<]+)</
-      h[:date] = $1.strip
-    else
-      @errors << "missing date"
-    end
-    @s = @driver.find_elements(id: 'main')[0].text.gsub(',','')
-    if @s =~ /Negative Test Result (\d+)\nPositive Test Result (\d+)\nHospitalizations [^\n]+\nDeaths (\d+)\n/
-      h[:positive] = string_to_i($2)
-      h[:negative] = string_to_i($1)
-      h[:deaths] = string_to_i($3)
-    else
-      @errors << "missing cases"
-    end
-    h
   end
 
   def parse_wv(h)
