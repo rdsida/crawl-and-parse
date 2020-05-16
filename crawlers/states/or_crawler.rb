@@ -12,6 +12,10 @@ class OrCrawler < BaseCrawler
 
   def _find_positive
     @results[:positive] = /Total cases (\d+)/.match(@cases_table)[1].to_i
+    if (@results[:positive] % 10 == 1) && (@results[:positive] > 35000)
+      @results[:positive] /= 10
+    end
+    @results[:positive]
   end
 
   def _find_tested
