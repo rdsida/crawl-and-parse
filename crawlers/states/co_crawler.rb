@@ -4,10 +4,6 @@ class CoCrawler < BaseCrawler
 
   protected
 
-  def _set_page_up
-    byebug
-  end
-
   def _find_positive
     w = /((\d+,)*\d+)Cases/.match(_page_elements)
     return unless w
@@ -21,7 +17,7 @@ class CoCrawler < BaseCrawler
   end
 
   def _find_deaths
-    w = /((\d+,)*\d+)Deaths/.match(_page_elements)
+    w = /((\d+,)*\d+)deaths among cases/.match(_page_elements)
     return unless w
     @results[:deaths] = w[1].tr(',', '').to_i
   end
