@@ -21,7 +21,7 @@ Dir['./crawlers/states/*.rb'].sort.each { |file| require file }
 # missing tested:   de, ms, oh, me (neg)
 # missing deaths:
 
-SEC = 30 # seconds to wait for page to load
+SEC = 30/6 # seconds to wait for page to load
 OFFSET = nil # if set, start running at that state
 SKIP_LIST = [] # skip these states
 =begin
@@ -429,7 +429,7 @@ byebug
 
   def parse_ks(h)
     crawl_page
-    sec = SEC/10
+    sec = SEC/3
     loop do
       @s = @driver.page_source.gsub(',','')
       if @s =~ /(\d+) Confirmed Positive Test Res/
@@ -441,7 +441,7 @@ byebug
         break
       end
       sec -= 1
-      if sec == 0
+      if sec <= 0
         @errors << 'parse failed'
         break
       end

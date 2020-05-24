@@ -83,6 +83,11 @@ class OkCrawler < BaseCrawler
   end
 
   def get_dashboard_number(query)
+    t = wait.until {
+      t = grid_items.map {|i| i.text}.select {|i| i =~ /Cases by Race/}.first
+    }
+    @results[:race_unparsed] = t
+
     item = wait.until do
       # Find an item which starts with the given query
       grid_items.filter { |i| i.text.index(query)&.zero? }

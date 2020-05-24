@@ -29,8 +29,10 @@ class WaCrawler < BaseCrawler
   # end
 
   def _find_deaths
-    if @county_table && (deaths = /Total \d+ (\d+)/.match(@county_table.find_elements(tag_name: 'tr')[-1].text.tr(",", ""))[1].to_i)
-      @results[:deaths] = deaths
+    @driver.find_element(id: 'togDeathsByRaceTbl').click
+    if (s = @driver.find_elements(class: 'table').map {|i| i.text.gsub(',','')}.select {|i| i=~/Total Number of Deaths/}[0]) && (s =~ /Total Number of Deaths\s(\d+)/)
+      @results[:deaths] = $1.to_i
+    else
     end
   end
 
@@ -45,6 +47,7 @@ class WaCrawler < BaseCrawler
   end
 
   def _find_counties
+    return # broken
     if @county_table
       @county_table.find_elements(tag_name: 'tr').each do |county|
         data = county.text.split
