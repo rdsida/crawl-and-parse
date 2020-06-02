@@ -549,8 +549,8 @@ byebug
       @errors << 'missing tested2'
     end
 =end
-    if (x = cols.map.with_index {|v,i| [v,i]}.select {|v,i| v=~/Total Positive: /i}.first) &&
-      x[0] =~ /Total Positive: ([0-9]+)/i
+    if (x = cols.map.with_index {|v,i| [v,i]}.select {|v,i| v=~/Total positive cases: /i}.first) &&
+      x[0] =~ /Total positive cases: ([0-9]+)/i
       h[:positive] = string_to_i($1)
     else
       @errors << 'missing positive'
