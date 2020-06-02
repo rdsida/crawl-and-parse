@@ -464,12 +464,13 @@ byebug
       @errors << 'link failed'
       return h
     end
-    sec = SEC/3
+    sec = SEC
     loop do
       sec -= 1
       puts "sleeping...#{sec}"
       sleep 1
       if sec <=0
+byebug
         @errors << 'failed'
         break
       end
@@ -479,12 +480,11 @@ byebug
         @s = ''
       end
       if @s =~ /Data updated: ([^\n ]+)/
-
         h[:date] = $1.strip
       end
       if @s =~ /\n(\d+)\nCases Reported/
         h[:positive] = string_to_i($1)
-        if @s =~ /\nDeaths Reported\n(\d+)/
+        if @s =~ /\n(\d+)\nDeaths Reported\n/
           h[:deaths] = string_to_i($1)
           if @s =~ /\nCommercial Tests\n(\d+)/
             h[:tested] = string_to_i($1)
