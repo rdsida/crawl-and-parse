@@ -12,16 +12,22 @@ class MdCrawler < BaseCrawler
   end
 
   def _find_positive
-    @results[:positive] = /Number of confirmed cases  (\d+)/.match(page_elements)[1]&.to_i
+    wait.until {
+      @results[:positive] = /Number of confirmed cases  (\d+)/.match(page_elements)[1]&.to_i
+    }
   end
 
   def _find_tested
-    @results[:negative] = /Number of negative test results  (\d+)/.match(page_elements)[1]&.to_i
+    wait.until {
+      @results[:negative] = /Number of persons tested negative\s+(\d+)/.match(page_elements)[1]&.to_i
+    }
   end
 
   def _find_deaths
-    @results[:deaths] = /Number of confirmed deaths  (\d+)/.match(page_elements)[1]&.to_i
-    @results[:deaths] += /Number of probable deaths\s+(\d+)/.match(page_elements)[1]&.to_i
+    wait.until {
+      @results[:deaths] = /Number of confirmed deaths  (\d+)/.match(page_elements)[1]&.to_i
+      @results[:deaths] += /Number of probable deaths\s+(\d+)/.match(page_elements)[1]&.to_i
+    }
   end
 
   def _find_hospitalized
