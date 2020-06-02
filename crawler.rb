@@ -1216,8 +1216,7 @@ byebug
   def parse_wy(h)
     crawl_page
     s = @driver.find_element(class: 'page').text
-    #byebug
-    if s =~ /At this time there are ([^\s]+) laboratory/
+    if s.gsub(',','') =~ /(\d+) – laboratory-confirmed cases/
       h[:positive] = string_to_i($1)
     else
       @errors << "cases found"
