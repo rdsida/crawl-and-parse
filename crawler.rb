@@ -1222,6 +1222,9 @@ byebug
     else
       @errors << "cases found"
     end
+    if @driver.find_elements(class: 'et_pb_text_inner').map {|i| i.text}.join.gsub(',','') =~ /(\d+)\s+– COVID-19 related deaths\n/
+      h[:deaths] = $1.to_i
+    end
     h[:tested] = 0
     if @s =~ /Tests completed at Wyoming Public Health Laboratory: ([^<]+)</
       h[:tested] += string_to_i($1)
@@ -1240,7 +1243,6 @@ byebug
     end
     url = 'https://health.wyo.gov/publichealth/infectious-disease-epidemiology-unit/disease/novel-coronavirus/covid-19-map-and-statistics/'
     crawl_page url
-    puts 'death manual'
     byebug unless @auto_flag
     h
   end
