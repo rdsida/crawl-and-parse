@@ -61,23 +61,23 @@ class DeCrawler < BaseCrawler
   end
 
   def _find_counties
-    new_castle_regex = %r(/New Castle County (\d+)/)
+    new_castle_regex = %r(New Castle County (\d+))
     @results[:counties] << {
       name: 'New Castle County',
-      positive: new_castle_regex.match(@positive_data),
-      tested: new_castle_regex.match(@testing_data),
+      positive: new_castle_regex.match(@positive_data)[1].to_i,
+      tested: new_castle_regex.match(@testing_data)[1].to_i,
     }
-    kent_county = %r(/Kent County (\d+)/)
+    kent_county = %r(Kent County (\d+))
     @results[:counties] << {
       name: 'Kent County',
-      positive: kent_county.match(@positive_data),
-      tested: kent_county.match(@testing_data),
+      positive: kent_county.match(@positive_data)[1].to_i,
+      tested: kent_county.match(@testing_data)[1].to_i,
     }
-    sussex_county = %r(/Sussex County (\d+)/)
+    sussex_county = %r(Sussex County (\d+))
     @results[:counties] << {
       name: 'Sussex County',
-      positive: sussex_county.match(@positive_data),
-      tested: sussex_county.match(@testing_data),
+      positive: sussex_county.match(@positive_data)[1].to_i,
+      tested: sussex_county.match(@testing_data)[1].to_i,
     }
   end
 
